@@ -35,8 +35,8 @@ class Server {
   }
 
   private broadcast(message: string): void {
-    for (const key in this.clients) {
-      const client: Client = this.clients[key];
+    for (const id in this.clients) {
+      const client: Client = this.clients[id];
       client.socket.write(Buffer.from(message));
     }
   }

@@ -31,9 +31,18 @@ function createClient(): Socket {
   return client;
 }
 
-function main(): void {
-  for (let i = 0; i < 100; i++) {
+function sleep(dt: number): Promise<void> {
+  return new Promise<void>((resolve): void => {
+    setTimeout((): void => {
+      resolve();
+    }, dt);
+  });
+}
+
+async function main(): Promise<void> {
+  for (let i = 0; i < 1000; i++) {
     const _client: Socket = createClient();
+    await sleep(100);
   }
 }
 
