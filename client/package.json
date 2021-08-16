@@ -6,6 +6,9 @@
   "scripts": {
     "start": "yarn start:react & yarn start:electron",
     "start:react": "cd react && yarn start",
-    "start:electron": "cd electron && yarn start"
+    "start:electron": "cd electron && yarn start",
+    "package": "yarn build:react && yarn package:electron",
+    "build:react": "cd react && yarn build",
+    "package:electron": "cd electron && yarn package"
   }
 }
