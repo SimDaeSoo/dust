@@ -1,0 +1,11 @@
+{
+  "name": "client",
+  "version": "0.0.0",
+  "main": "",
+  "license": "MIT",
+  "scripts": {
+    "start": "yarn start:react & yarn start:electron",
+    "start:react": "cd react && yarn start",
+    "start:electron": "cd electron && yarn start"
+  }
+}
