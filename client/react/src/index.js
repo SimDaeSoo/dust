@@ -43,3 +43,8 @@ app.ticker.add((delta) => {
   // use delta to create frame-independent transform
   container.rotation -= 0.01 * delta;
 });
+
+window.emitter.on("receive", (...args) => {
+  console.log(`Received ${args} from main process`);
+});
+window.emitter.emit("send", "some data");
