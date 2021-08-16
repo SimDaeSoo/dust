@@ -1,7 +1,7 @@
 {
-  "name": "dust",
+  "name": "server",
   "version": "0.0.0",
-  "description": "node game server",
+  "description": "",
   "main": "src/index.ts",
   "repository": "https://github.com/SimDaeSoo/dust.git",
   "author": "daesoo94 <tlaeotn123@gmail.com>",
