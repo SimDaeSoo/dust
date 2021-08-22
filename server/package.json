@@ -1,19 +1,16 @@
 {
-  "name": "server",
+  "name": "dust_server",
   "version": "0.0.0",
   "description": "",
-  "main": "src/index.ts",
+  "main": "",
   "repository": "https://github.com/SimDaeSoo/dust.git",
   "author": "daesoo94 <tlaeotn123@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "start-server": "ts-node src/index.ts",
-    "start-client": "ts-node src/test.ts"
+    "test": "ts-node ./tests/index.ts"
   },
   "dependencies": {
     "@types/node": "14.17.3",
-    "@types/redis": "^2.8.31",
-    "redis": "^3.1.2",
     "ts-node": "^10.1.0",
     "typescript": "^4.3.5"
   }

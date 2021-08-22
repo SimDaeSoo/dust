@@ -1,10 +1,11 @@
 import * as PIXI from 'pixi.js';
+import './index.css';
 
 const resolution = window.devicePixelRatio || 1;
 const app = new PIXI.Application({
   width: window.innerWidth,
   height: window.innerHeight,
-  backgroundColor: 0xFFFFFF,
+  backgroundColor: 0x000000,
   resolution,
 });
 
@@ -18,7 +19,7 @@ const container = new PIXI.Container();
 app.stage.addChild(container);
 
 // Create a new texture
-const texture = PIXI.Texture.from('https://pixijs.io/examples/examples/assets/bunny.png');
+const texture = PIXI.Texture.WHITE;
 
 // Create a 5x5 grid of bunnies
 for (let i = 0; i < 25; i++) {
@@ -43,8 +44,3 @@ app.ticker.add((delta) => {
   // use delta to create frame-independent transform
   container.rotation -= 0.01 * delta;
 });
-
-window.emitter.on("receive", (...args) => {
-  console.log(`Received ${args} from main process`);
-});
-window.emitter.emit("send", "some data");
