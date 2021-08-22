@@ -1,7 +1,16 @@
 import * as Engine from './modules/engine';
-import * as Types from './interfaces';
+import * as Map from './modules/map';
+import { Point, Line, Vector, Grid, Binary, Boundary, Square, Dictionary, } from './interfaces';
 
 export {
   Engine,
-  Types
+  Map,
+  Point,
+  Line,
+  Vector,
+  Grid,
+  Binary,
+  Boundary,
+  Square,
+  Dictionary,
 }
