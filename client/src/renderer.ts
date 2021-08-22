@@ -19,7 +19,7 @@ const container = new PIXI.Container();
 app.stage.addChild(container);
 
 // Create a new texture
-const texture = PIXI.Texture.WHITE;
+const texture = PIXI.Texture.from('../assets/characters/1.png');
 
 // Create a 5x5 grid of bunnies
 for (let i = 0; i < 25; i++) {
