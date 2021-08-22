@@ -1,0 +1,14 @@
+{
+  "name": "dust",
+  "version": "0.0.0",
+  "main": "",
+  "repository": "https://github.com/SimDaeSoo/dust.git",
+  "author": "daesoo94 <tlaeotn123@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "link-engine": "yarn build-engine && yarn link-engine:client && yarn link-engine:server",
+    "build-engine": "cd packages/@dust/core && yarn && yarn build && yarn link",
+    "link-engine:client": "cd client && yarn link @dust/core",
+    "link-engine:server": "cd server && yarn link @dust/core"
+  }
+}
