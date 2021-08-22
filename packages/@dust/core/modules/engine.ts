@@ -1,4 +1,4 @@
-import { Line, Boundary, Square, Vector } from '../types';
+import { Line, Boundary, Square, Vector } from '../interfaces';
 
 function lineIntersection(lineA: Line, lineB: Line): number {
   const det: number = (lineA[1].x - lineA[0].x) * (lineB[1].y - lineB[0].y) - (lineB[1].x - lineB[0].x) * (lineA[1].y - lineA[0].y);

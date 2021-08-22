@@ -1,5 +1,5 @@
-import * as Engine from './classes/engine';
-import * as Types from './types';
+import * as Engine from './modules/engine';
+import * as Types from './interfaces';
 
 export {
   Engine,
