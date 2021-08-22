@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import './index.css';
+import '../static/index.css';
 
 const resolution = window.devicePixelRatio || 1;
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
@@ -25,14 +25,14 @@ document.body.appendChild(app.view);
 
 const container = new PIXI.Container();
 for (let i = 0; i < 118; i++) {
-  const src = `../assets/characters/body/1/${i.toString().padStart(3, '0')}.png`;
+  const src = `../static/assets/characters/body/1/${i.toString().padStart(3, '0')}.png`;
   PIXI.Loader.shared.add(src, src);
 }
 
 PIXI.Loader.shared.load(() => {
   const textures = [];
   for (let i = 0; i < 118; i++) {
-    const src = `../assets/characters/body/1/${i.toString().padStart(3, '0')}.png`;
+    const src = `../static/assets/characters/body/1/${i.toString().padStart(3, '0')}.png`;
     textures.push(PIXI.Texture.from(src));
   }
 
