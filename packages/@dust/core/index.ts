@@ -1,6 +1,19 @@
-import * as Engine from './modules/engine';
-import * as Map from './modules/map';
-import { Point, Line, Vector, Grid, Binary, Boundary, Square, Dictionary, } from './interfaces';
+import * as Engine from './modules/Engine';
+import * as Map from './modules/Map';
+import {
+  Point,
+  Line,
+  Vector,
+  Grid,
+  Binary,
+  Boundary,
+  Square,
+  Dictionary,
+  Tile,
+  MapData,
+  CollisionDirectionLine,
+  DIRECTION,
+} from './interfaces';
 
 export {
   Engine,
@@ -13,4 +26,8 @@ export {
   Boundary,
   Square,
   Dictionary,
+  Tile,
+  MapData,
+  CollisionDirectionLine,
+  DIRECTION,
 }
