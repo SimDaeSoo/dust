@@ -9,9 +9,9 @@ function generate(width: number, height: number, seed: string): Grid<Tile> {
     grid.push(new Array(width));
 
     for (let x = 0; x < width; x++) {
-      grid[y][x] = {
-        movable: random() < 0.2 ? false : true
-      };
+      if (random() < 0.2) {
+        grid[y][x] = { movable: false };
+      }
     }
   }
 

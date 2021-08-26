@@ -240,19 +240,15 @@ function getDirectionLinesOnVectorSquare(vectorSquare: { square: Square, vector:
 }
 
 function lineIntersection(lineA: Line, lineB: Line): number {
-  const det: number = (lineA[1].x - lineA[0].x) * (lineB[1].y - lineB[0].y) - (lineB[1].x - lineB[0].x) * (lineA[1].y - lineA[0].y);
+  const det = (lineA[1].x - lineA[0].x) * (lineB[1].y - lineB[0].y) - (lineB[1].x - lineB[0].x) * (lineA[1].y - lineA[0].y);
 
   if (det === 0) {
-    const onSamePointA: boolean = (lineA[0].x === lineB[0].x && lineA[0].y === lineB[0].y) || (lineA[0].x === lineB[1].x && lineA[0].y === lineB[1].y);
-    const onSamePointB: boolean = (lineA[1].x === lineB[0].x && lineA[1].y === lineB[0].y) || (lineA[1].x === lineB[1].x && lineA[1].y === lineB[1].y);
-    const onSamePoint: boolean = onSamePointA || onSamePointB;
-
-    return onSamePoint ? (onSamePointA ? 0 : 1) : -1;
+    return -1;
   } else {
-    const t1: number = ((lineB[1].y - lineB[0].y) * (lineB[1].x - lineA[0].x) + (lineB[0].x - lineB[1].x) * (lineB[1].y - lineA[0].y)) / det;
-    const t2: number = ((lineA[0].y - lineA[1].y) * (lineB[1].x - lineA[0].x) + (lineA[1].x - lineA[0].x) * (lineB[1].y - lineA[0].y)) / det;
+    const t1 = ((lineB[1].y - lineB[0].y) * (lineB[1].x - lineA[0].x) + (lineB[0].x - lineB[1].x) * (lineB[1].y - lineA[0].y)) / det;
+    const t2 = ((lineA[0].y - lineA[1].y) * (lineB[1].x - lineA[0].x) + (lineA[1].x - lineA[0].x) * (lineB[1].y - lineA[0].y)) / det;
 
-    return (0 <= t1 && t1 <= 1 && 0 <= t2 && t2 <= 1) ? (t1 < t2 ? t2 : t1) : -1;
+    return (0 <= t1 && t1 <= 1 && 0 <= t2 && t2 <= 1) ? t1 : -1;
   }
 }
 
