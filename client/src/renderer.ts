@@ -48,8 +48,8 @@ document.body.appendChild(app.view);
 // });
 
 const tileContainer = new PIXI.Container();
-const width = 1000;
-const height = 500;
+const width = 40; // 1000
+const height = 22; // 500
 const tileSize = 32;
 const grid = Map.generate(width, height, Math.random().toString(), 0.35);
 const map = {
@@ -61,8 +61,8 @@ const map = {
 };
 const texture = PIXI.Texture.WHITE;
 
-for (let y = 0; y < 50; y++) {
-  for (let x = 0; x < 80; x++) {
+for (let y = 0; y < 22; y++) {
+  for (let x = 0; x < 40; x++) {
     if (!grid[y][x] || grid[y][x].movable) continue;
     const sprite = new PIXI.Sprite(texture);
 
@@ -82,7 +82,7 @@ const lightGraphic = new PIXI.Graphics();
 
 app.stage.addChild(lightGraphic);
 
-for (let i = 0; i < 1; i++) {
+for (let i = 0; i < 2; i++) {
   const container = new PIXI.Container();
   const sprite = new PIXI.Sprite(texture);
   sprite.width = characterSize;
@@ -115,7 +115,6 @@ const render = () => {
     lastDT = dt;
   }
 
-  let i = 0;
   lightGraphic.clear();
   for (const { container, vector } of characters) {
     const collisionDatas = Engine.collision({
@@ -150,12 +149,10 @@ const render = () => {
     if (!collisionDirection.x) container.x += vector.x;
     if (!collisionDirection.y) container.y += vector.y;
 
-    if (i++ < 1) {
-      const polygon = Lighting.getLightingPolygon({ x: container.x + characterSize / 2, y: container.y + characterSize / 2 }, map, 8);
-      lightGraphic.beginFill(0xFFFF00, 0.3);
-      lightGraphic.drawPolygon(polygon as any);
-      lightGraphic.endFill();
-    }
+    const polygon = Lighting.getLightingPolygon({ x: container.x + characterSize / 2, y: container.y + characterSize / 2 }, map, 8);
+    lightGraphic.beginFill(0xFFFF00, 0.3);
+    lightGraphic.drawPolygon(polygon as any);
+    lightGraphic.endFill();
   }
 
   app.render();

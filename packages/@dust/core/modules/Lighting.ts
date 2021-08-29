@@ -167,7 +167,7 @@ function getLightingPolygon(lightPoint: Point, map: MapData, length: number, opt
 
   const RAY_LENGTH = 2 * length * map.tileSize;
   const EPSILON = 0.1;
-  const RAY_EPSILON = 0.01 * Math.PI / 180;
+  const RAY_EPSILON = 0.000001;
   for (const vertex of vertices) {
     const radian = Math.atan2(vertex.y - lightPoint.y, vertex.x - lightPoint.x);
     const rays: Array<Line> = [
