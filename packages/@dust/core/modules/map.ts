@@ -18,13 +18,13 @@ function generate(width: number, height: number, seed: string, density: number):
   return grid;
 }
 
-function print(map: MapData, options: { checkPoints: Array<Point> }): void {
+function print(map: MapData, options?: { checkPoints: Array<Point> }): void {
   for (let y = 0; y < map.height; y++) {
     const tiles: Array<string> = [];
 
     for (let x = 0; x < map.width; x++) {
-      const filteredcheckPoints = options.checkPoints.filter(({ x: x1, y: y1 }: Point) => Math.floor(x1 / map.tileSize) === x && Math.floor(y1 / map.tileSize) === y);
-      if (filteredcheckPoints.length) {
+      const filteredcheckPoints = options?.checkPoints.filter(({ x: x1, y: y1 }: Point) => Math.floor(x1 / map.tileSize) === x && Math.floor(y1 / map.tileSize) === y);
+      if (filteredcheckPoints?.length) {
         tiles.push('\x1b[31m◈\x1b[0m');
       } else if (map.grid[y][x] && !map.grid[y][x].movable) {
         tiles.push('■');

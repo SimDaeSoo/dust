@@ -1,11 +1,13 @@
 import { Boundary, Dictionary, Line, MapData, Point } from "../interfaces/index";
 import { lineIntersection } from "./Engine";
 
-function getLightingPolygon(lightPoint: Point, map: MapData, length: number): Array<Point> {
+function getLightingPolygon(lightPoint: Point, map: MapData, length: number, options?: { getTiles: boolean }): Array<Point> {
   const vertices: Array<Point> = [];
   const lines: Array<Line> = [];
   const polygon: Array<Point> = [];
   const checkGrid: Dictionary<boolean> = {};
+  const baseDictionary: Dictionary<boolean> = {};
+  const tiles: Array<Point> = [];
   const baseGridPosition: Point = {
     x: Math.floor(lightPoint.x / map.tileSize),
     y: Math.floor(lightPoint.y / map.tileSize)
@@ -27,11 +29,7 @@ function getLightingPolygon(lightPoint: Point, map: MapData, length: number): Ar
     { x: baseGridPosition.x, y: baseGridPosition.y - 1 },
     { x: baseGridPosition.x + 1, y: baseGridPosition.y },
     { x: baseGridPosition.x, y: baseGridPosition.y + 1 },
-    { x: baseGridPosition.x - 1, y: baseGridPosition.y },
-    { x: baseGridPosition.x - 1, y: baseGridPosition.y - 1 },
-    { x: baseGridPosition.x - 1, y: baseGridPosition.y + 1 },
-    { x: baseGridPosition.x + 1, y: baseGridPosition.y - 1 },
-    { x: baseGridPosition.x + 1, y: baseGridPosition.y + 1 },
+    { x: baseGridPosition.x - 1, y: baseGridPosition.y }
   ]) {
     const vaildTile: boolean =
       position.x >= positionBoundary.min.x &&
@@ -55,50 +53,79 @@ function getLightingPolygon(lightPoint: Point, map: MapData, length: number): Ar
         { x: (position.x + 1) * map.tileSize, y: (position.y + 1) * map.tileSize }
       ];
       if (position.x > baseGridPosition.x) {
-        if (position.y > baseGridPosition.y) {
+        if (position.y > baseGridPosition.y) { // RD
+          if (!map.grid[position.y - 1][position.x - 1] || map.grid[position.y - 1][position.x - 1].movable) {
+            vertices.push({ x: tilePositions[0].x, y: tilePositions[0].y });
+          }
+          if (!map.grid[position.y][position.x - 1] || map.grid[position.y][position.x - 1].movable) {
+            vertices.push({ x: tilePositions[0].x, y: tilePositions[1].y });
+            lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[0].x, y: tilePositions[1].y }]);
+          }
+          if (!map.grid[position.y - 1][position.x] || map.grid[position.y - 1][position.x].movable) {
+            vertices.push({ x: tilePositions[1].x, y: tilePositions[0].y });
+            lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[0].y }]);
+          }
+        } else if (position.y < baseGridPosition.y) { // RU
+          if (!map.grid[position.y + 1][position.x - 1] || map.grid[position.y + 1][position.x - 1].movable) {
+            vertices.push({ x: tilePositions[0].x, y: tilePositions[1].y });
+          }
+          if (!map.grid[position.y][position.x - 1] || map.grid[position.y][position.x - 1].movable) {
+            vertices.push({ x: tilePositions[0].x, y: tilePositions[0].y });
+            lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[0].x, y: tilePositions[1].y }]);
+          }
+          if (!map.grid[position.y + 1][position.x] || map.grid[position.y + 1][position.x].movable) {
+            vertices.push({ x: tilePositions[1].x, y: tilePositions[1].y });
+            lines.push([{ x: tilePositions[0].x, y: tilePositions[1].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
+          }
+        } else if (!baseDictionary['R']) { // R
           vertices.push({ x: tilePositions[0].x, y: tilePositions[0].y });
           vertices.push({ x: tilePositions[0].x, y: tilePositions[1].y });
-          vertices.push({ x: tilePositions[1].x, y: tilePositions[0].y });
-          lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[0].y }]);
           lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[0].x, y: tilePositions[1].y }]);
-        } else if (position.y < baseGridPosition.y) {
-          vertices.push({ x: tilePositions[0].x, y: tilePositions[0].y });
-          vertices.push({ x: tilePositions[0].x, y: tilePositions[1].y });
-          vertices.push({ x: tilePositions[1].x, y: tilePositions[1].y });
-          lines.push([{ x: tilePositions[0].x, y: tilePositions[1].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
-          lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[0].x, y: tilePositions[1].y }]);
-        } else {
-          vertices.push({ x: tilePositions[0].x, y: tilePositions[0].y });
-          vertices.push({ x: tilePositions[0].x, y: tilePositions[1].y });
-          lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[0].x, y: tilePositions[1].y }]);
+          baseDictionary['R'] = true;
         }
       } else if (position.x < baseGridPosition.x) {
-        if (position.y > baseGridPosition.y) {
-          vertices.push({ x: tilePositions[0].x, y: tilePositions[0].y });
+        if (position.y > baseGridPosition.y) { // LD
+
+          if (!map.grid[position.y - 1][position.x + 1] || map.grid[position.y - 1][position.x + 1].movable) {
+            vertices.push({ x: tilePositions[1].x, y: tilePositions[0].y });
+          }
+          if (!map.grid[position.y][position.x + 1] || map.grid[position.y][position.x + 1].movable) {
+            vertices.push({ x: tilePositions[1].x, y: tilePositions[1].y });
+            lines.push([{ x: tilePositions[1].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
+          }
+          if (!map.grid[position.y - 1][position.x] || map.grid[position.y - 1][position.x].movable) {
+            vertices.push({ x: tilePositions[0].x, y: tilePositions[0].y });
+            lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[0].y }]);
+          }
+        } else if (position.y < baseGridPosition.y) { // LU
+          if (!map.grid[position.y + 1][position.x + 1] || map.grid[position.y + 1][position.x + 1].movable) {
+            vertices.push({ x: tilePositions[1].x, y: tilePositions[1].y });
+          }
+          if (!map.grid[position.y][position.x + 1] || map.grid[position.y][position.x + 1].movable) {
+            vertices.push({ x: tilePositions[1].x, y: tilePositions[0].y });
+            lines.push([{ x: tilePositions[1].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
+          }
+          if (!map.grid[position.y + 1][position.x] || map.grid[position.y + 1][position.x].movable) {
+            vertices.push({ x: tilePositions[0].x, y: tilePositions[1].y });
+            lines.push([{ x: tilePositions[0].x, y: tilePositions[1].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
+          }
+        } else if (!baseDictionary['L']) { // L
           vertices.push({ x: tilePositions[1].x, y: tilePositions[0].y });
           vertices.push({ x: tilePositions[1].x, y: tilePositions[1].y });
-          lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[0].y }]);
           lines.push([{ x: tilePositions[1].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
-        } else if (position.y < baseGridPosition.y) {
-          vertices.push({ x: tilePositions[0].x, y: tilePositions[1].y });
-          vertices.push({ x: tilePositions[1].x, y: tilePositions[0].y });
-          vertices.push({ x: tilePositions[1].x, y: tilePositions[1].y });
-          lines.push([{ x: tilePositions[1].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
-          lines.push([{ x: tilePositions[0].x, y: tilePositions[1].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
-        } else {
-          vertices.push({ x: tilePositions[1].x, y: tilePositions[0].y });
-          vertices.push({ x: tilePositions[1].x, y: tilePositions[1].y });
-          lines.push([{ x: tilePositions[1].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
+          baseDictionary['L'] = true;
         }
       } else {
-        if (position.y > baseGridPosition.y) {
+        if (position.y > baseGridPosition.y && !baseDictionary['D']) { // D
           vertices.push({ x: tilePositions[0].x, y: tilePositions[0].y });
           vertices.push({ x: tilePositions[1].x, y: tilePositions[0].y });
           lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[0].y }]);
-        } else if (position.y < baseGridPosition.y) {
+          baseDictionary['D'] = true;
+        } else if (position.y < baseGridPosition.y && !baseDictionary['U']) { // U
           vertices.push({ x: tilePositions[0].x, y: tilePositions[1].y });
           vertices.push({ x: tilePositions[1].x, y: tilePositions[1].y });
           lines.push([{ x: tilePositions[0].x, y: tilePositions[1].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
+          baseDictionary['U'] = true;
         }
       }
     } else {
@@ -117,6 +144,7 @@ function getLightingPolygon(lightPoint: Point, map: MapData, length: number): Ar
           childPosition.y <= positionBoundary.max.y;
 
         if (vaildTile) {
+          tiles.push({ x: childPosition.x, y: childPosition.y });
           checkGrid[`${childPosition.y},${childPosition.x}`] = true;
           queue.push(childPosition);
         }
@@ -161,6 +189,7 @@ function getLightingPolygon(lightPoint: Point, map: MapData, length: number): Ar
 
   polygon.sort((pointA, pointB) => Math.atan2(pointA.y - lightPoint.y, pointA.x - lightPoint.x) > Math.atan2(pointB.y - lightPoint.y, pointB.x - lightPoint.x) ? 1 : -1);
 
+  if (options && options.getTiles) return tiles;
   return polygon.reduce((vertices: Array<Point>, point, index) => {
     const prevPoint = index === 0 ? polygon[polygon.length - 1] : polygon[index - 1];
     const nextPoint = index === polygon.length - 1 ? polygon[0] : polygon[index + 1];

@@ -13,10 +13,13 @@ function main(): void {
     width,
     height,
     tileSize,
-    grid: generate(width, height, seed, 0.1)
+    grid: generate(width, height, seed, 0.4)
   };
   const position: Point = { x: 198, y: 58 };
-  getLightingPolygon(position, map, 10);
+  const tiles = getLightingPolygon(position, map, 10, { getTiles: true });
+  print(map, { checkPoints: [position] });
+  console.log(new Array(width).fill('-').toString().replace(/,/g, '-'));
+  print(map, { checkPoints: tiles.map(({ x, y }) => ({ x: x * tileSize, y: y * tileSize })) });
   console.log(seed);
 }
 
