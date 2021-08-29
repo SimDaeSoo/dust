@@ -160,9 +160,9 @@ const render = () => {
 
     const size = 2;
     for (const point of polygon) {
-      lightGraphic.beginFill(0xFF0000);
-      lightGraphic.drawPolygon([{ x: point.x - size, y: point.y - size }, { x: point.x + size, y: point.y - size }, { x: point.x + size, y: point.y + size }, { x: point.x - size, y: point.y + size }] as any);
-      lightGraphic.endFill();
+      verticiesGraphic.beginFill(0xFF0000);
+      verticiesGraphic.drawPolygon([{ x: point.x - size, y: point.y - size }, { x: point.x + size, y: point.y - size }, { x: point.x + size, y: point.y + size }, { x: point.x - size, y: point.y + size }] as any);
+      verticiesGraphic.endFill();
     }
   }
 
