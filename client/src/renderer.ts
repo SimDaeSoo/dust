@@ -79,6 +79,7 @@ app.stage.addChild(tileContainer);
 const characters: Array<{ container: PIXI.Container, vector: Vector }> = [];
 const characterSize = 12;
 const lightGraphic = new PIXI.Graphics();
+lightGraphic.filters = [new PIXI.filters.BlurFilter()];
 const verticiesGraphic = new PIXI.Graphics();
 
 app.stage.addChild(lightGraphic);
@@ -153,7 +154,7 @@ const render = () => {
     if (!collisionDirection.y) container.y += vector.y;
 
     const polygon = Lighting.getLightingPolygon({ x: container.x + characterSize / 2, y: container.y + characterSize / 2 }, map, 8);
-    lightGraphic.beginFill(0xFFFF00, 0.3);
+    lightGraphic.beginFill(0xFFFFFF, 0.3);
     lightGraphic.drawPolygon(polygon as any);
     lightGraphic.endFill();
 
