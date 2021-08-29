@@ -188,6 +188,7 @@ function getLightingPolygon(lightPoint: Point, map: MapData, length: number, opt
 
   polygon.sort((pointA, pointB) => Math.atan2(pointA.y - lightPoint.y, pointA.x - lightPoint.x) > Math.atan2(pointB.y - lightPoint.y, pointB.x - lightPoint.x) ? 1 : -1);
 
+  const duplicatedPoints: Dictionary<boolean> = {};
   if (options && options.getTiles) return tiles;
   return polygon.reduce((vertices: Array<Point>, point, index) => {
     const prevPoint = index === 0 ? polygon[polygon.length - 1] : polygon[index - 1];
@@ -195,7 +196,10 @@ function getLightingPolygon(lightPoint: Point, map: MapData, length: number, opt
     const sameX = Math.abs(prevPoint.x - point.x) <= EPSILON && Math.abs(nextPoint.x - point.x) <= EPSILON;
     const sameY = Math.abs(prevPoint.y - point.y) <= EPSILON && Math.abs(nextPoint.y - point.y) <= EPSILON;
 
-    if (!sameX && !sameY) vertices.push({ x: Math.round(point.x), y: Math.round(point.y) });
+    if (!sameX && !sameY && !duplicatedPoints[`${Math.round(point.y)},${Math.round(point.x)}`]) {
+      vertices.push({ x: Math.round(point.x), y: Math.round(point.y) });
+      duplicatedPoints[`${Math.round(point.y)},${Math.round(point.x)}`] = true;
+    }
 
     return vertices;
   }, []);
