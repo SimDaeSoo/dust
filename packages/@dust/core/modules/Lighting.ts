@@ -166,13 +166,12 @@ function getLightingPolygon(lightPoint: Point, map: MapData, length: number, opt
   );
 
   const RAY_LENGTH = 2 * length * map.tileSize;
-  const EPSILON = 0.1;
-  const RAY_EPSILON = 0.000001;
+  const EPSILON = 0.000001;
   for (const vertex of vertices) {
     const radian = Math.atan2(vertex.y - lightPoint.y, vertex.x - lightPoint.x);
     const rays: Array<Line> = [
-      [{ x: lightPoint.x, y: lightPoint.y }, { x: lightPoint.x + Math.cos(radian + RAY_EPSILON) * RAY_LENGTH, y: lightPoint.y + Math.sin(radian + RAY_EPSILON) * RAY_LENGTH }],
-      [{ x: lightPoint.x, y: lightPoint.y }, { x: lightPoint.x + Math.cos(radian - RAY_EPSILON) * RAY_LENGTH, y: lightPoint.y + Math.sin(radian - RAY_EPSILON) * RAY_LENGTH }],
+      [{ x: lightPoint.x, y: lightPoint.y }, { x: lightPoint.x + Math.cos(radian + EPSILON) * RAY_LENGTH, y: lightPoint.y + Math.sin(radian + EPSILON) * RAY_LENGTH }],
+      [{ x: lightPoint.x, y: lightPoint.y }, { x: lightPoint.x + Math.cos(radian - EPSILON) * RAY_LENGTH, y: lightPoint.y + Math.sin(radian - EPSILON) * RAY_LENGTH }],
     ];
 
     for (const ray of rays) {
@@ -193,10 +192,10 @@ function getLightingPolygon(lightPoint: Point, map: MapData, length: number, opt
   return polygon.reduce((vertices: Array<Point>, point, index) => {
     const prevPoint = index === 0 ? polygon[polygon.length - 1] : polygon[index - 1];
     const nextPoint = index === polygon.length - 1 ? polygon[0] : polygon[index + 1];
-    const prevVector = Math.abs(prevPoint.x - point.x) <= EPSILON ? 'y' : (Math.abs(prevPoint.y - point.y) <= EPSILON ? 'x' : undefined);
-    const nextVector = Math.abs(nextPoint.x - point.x) <= EPSILON ? 'y' : (Math.abs(nextPoint.y - point.y) <= EPSILON ? 'x' : undefined);
+    const sameX = Math.abs(prevPoint.x - point.x) <= EPSILON && Math.abs(nextPoint.x - point.x) <= EPSILON;
+    const sameY = Math.abs(prevPoint.y - point.y) <= EPSILON && Math.abs(nextPoint.y - point.y) <= EPSILON;
 
-    if (!prevVector || !nextVector || prevVector !== nextVector) vertices.push({ x: Math.round(point.x), y: Math.round(point.y) });
+    if (!sameX && !sameY) vertices.push({ x: Math.round(point.x), y: Math.round(point.y) });
 
     return vertices;
   }, []);

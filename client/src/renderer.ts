@@ -79,10 +79,12 @@ app.stage.addChild(tileContainer);
 const characters: Array<{ container: PIXI.Container, vector: Vector }> = [];
 const characterSize = 12;
 const lightGraphic = new PIXI.Graphics();
+const verticiesGraphic = new PIXI.Graphics();
 
 app.stage.addChild(lightGraphic);
+app.stage.addChild(verticiesGraphic);
 
-for (let i = 0; i < 2; i++) {
+for (let i = 0; i < 1; i++) {
   const container = new PIXI.Container();
   const sprite = new PIXI.Sprite(texture);
   sprite.width = characterSize;
@@ -116,6 +118,7 @@ const render = () => {
   }
 
   lightGraphic.clear();
+  verticiesGraphic.clear();
   for (const { container, vector } of characters) {
     const collisionDatas = Engine.collision({
       square: { x: container.x, y: container.y, w: characterSize, h: characterSize },
@@ -153,6 +156,13 @@ const render = () => {
     lightGraphic.beginFill(0xFFFF00, 0.3);
     lightGraphic.drawPolygon(polygon as any);
     lightGraphic.endFill();
+
+    const size = 2;
+    for (const point of polygon) {
+      lightGraphic.beginFill(0xFF0000);
+      lightGraphic.drawPolygon([{ x: point.x - size, y: point.y - size }, { x: point.x + size, y: point.y - size }, { x: point.x + size, y: point.y + size }, { x: point.x - size, y: point.y + size }] as any);
+      lightGraphic.endFill();
+    }
   }
 
   app.render();
