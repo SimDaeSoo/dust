@@ -125,16 +125,16 @@ function getLightingPolygon(lightPoint: Point, map: MapData, length: number): Ar
   }
 
   lines.push(
-    [{ x: positionBoundary.min.x * map.tileSize, y: positionBoundary.min.y * map.tileSize }, { x: positionBoundary.max.x * map.tileSize, y: positionBoundary.min.y * map.tileSize }],
-    [{ x: positionBoundary.min.x * map.tileSize, y: positionBoundary.max.y * map.tileSize }, { x: positionBoundary.max.x * map.tileSize, y: positionBoundary.max.y * map.tileSize }],
-    [{ x: positionBoundary.min.x * map.tileSize, y: positionBoundary.min.y * map.tileSize }, { x: positionBoundary.min.x * map.tileSize, y: positionBoundary.max.y * map.tileSize }],
-    [{ x: positionBoundary.max.x * map.tileSize, y: positionBoundary.min.y * map.tileSize }, { x: positionBoundary.max.x * map.tileSize, y: positionBoundary.max.y * map.tileSize }],
+    [{ x: positionBoundary.min.x * map.tileSize, y: positionBoundary.min.y * map.tileSize }, { x: (positionBoundary.max.x + 1) * map.tileSize, y: positionBoundary.min.y * map.tileSize }],
+    [{ x: positionBoundary.min.x * map.tileSize, y: (positionBoundary.max.y + 1) * map.tileSize }, { x: (positionBoundary.max.x + 1) * map.tileSize, y: (positionBoundary.max.y + 1) * map.tileSize }],
+    [{ x: positionBoundary.min.x * map.tileSize, y: positionBoundary.min.y * map.tileSize }, { x: positionBoundary.min.x * map.tileSize, y: (positionBoundary.max.y + 1) * map.tileSize }],
+    [{ x: (positionBoundary.max.x + 1) * map.tileSize, y: positionBoundary.min.y * map.tileSize }, { x: (positionBoundary.max.x + 1) * map.tileSize, y: (positionBoundary.max.y + 1) * map.tileSize }],
   );
   vertices.push(
     { x: positionBoundary.min.x * map.tileSize, y: positionBoundary.min.y * map.tileSize },
-    { x: positionBoundary.max.x * map.tileSize, y: positionBoundary.min.y * map.tileSize },
-    { x: positionBoundary.min.x * map.tileSize, y: positionBoundary.max.y * map.tileSize },
-    { x: positionBoundary.max.x * map.tileSize, y: positionBoundary.max.y * map.tileSize }
+    { x: (positionBoundary.max.x + 1) * map.tileSize, y: positionBoundary.min.y * map.tileSize },
+    { x: positionBoundary.min.x * map.tileSize, y: (positionBoundary.max.y + 1) * map.tileSize },
+    { x: (positionBoundary.max.x + 1) * map.tileSize, y: (positionBoundary.max.y + 1) * map.tileSize }
   );
 
   const RAY_LENGTH = 2 * length * map.tileSize;

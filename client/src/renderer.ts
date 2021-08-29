@@ -151,7 +151,7 @@ const render = () => {
     if (!collisionDirection.y) container.y += vector.y;
 
     if (i++ < 40) {
-      const polygon = Lighting.getLightingPolygon({ x: container.x + characterSize / 2, y: container.y + characterSize / 2 }, map, 8);
+      const polygon = Lighting.getLightingPolygon({ x: container.x + characterSize / 2, y: container.y + characterSize / 2 }, map, 4);
       lightGraphic.beginFill(0xFFFF00, 0.3);
       lightGraphic.drawPolygon(polygon as any);
       lightGraphic.endFill();
