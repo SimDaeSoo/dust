@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import { Map, Engine, Vector, Line, Dictionary } from '@dust/core';
+import { Map, Engine, Lighting, Vector, Line, Dictionary, Point } from '@dust/core';
 import '../static/index.css';
 
 const resolution = window.devicePixelRatio || 1;
@@ -50,12 +50,19 @@ document.body.appendChild(app.view);
 const tileContainer = new PIXI.Container();
 const width = 1000;
 const height = 500;
-const tileSize = 4;
-const grid = Map.generate(width, height, Math.random().toString());
+const tileSize = 32;
+const grid = Map.generate(width, height, Math.random().toString(), 0.35);
+const map = {
+  seed: 'seed',
+  width,
+  height,
+  tileSize,
+  grid
+};
 const texture = PIXI.Texture.WHITE;
 
-for (let y = 0; y < 173; y++) {
-  for (let x = 0; x < 320; x++) {
+for (let y = 0; y < 50; y++) {
+  for (let x = 0; x < 80; x++) {
     if (!grid[y][x] || grid[y][x].movable) continue;
     const sprite = new PIXI.Sprite(texture);
 
@@ -70,34 +77,35 @@ for (let y = 0; y < 173; y++) {
 
 app.stage.addChild(tileContainer);
 const characters: Array<{ container: PIXI.Container, vector: Vector }> = [];
-const characterSize = 3;
+const characterSize = 12;
+const lightGraphic = new PIXI.Graphics();
 
-for (let i = 0; i < 5000; i++) {
+app.stage.addChild(lightGraphic);
+
+for (let i = 0; i < 1; i++) {
   const container = new PIXI.Container();
-
   const sprite = new PIXI.Sprite(texture);
   sprite.width = characterSize;
   sprite.height = characterSize;
-  sprite.tint = 0xff0000;
+  sprite.tint = 0xFF0000;
   container.addChild(sprite);
-  container.x = 1280 / 2;
-  container.y = 720 / 2;
+  container.x = 1280 / 2 + Math.round(Math.random() * 400);
+  container.y = 720 / 2 + Math.round(Math.random() * 200);
   app.stage.addChild(container);
   const vector = { x: 0, y: 0 };
   characters.push({
     container,
     vector
-  })
+  });
 
   setInterval(() => {
     vector.x = (Math.random() - Math.random()) * 2;
-    vector.y = (Math.random() - Math.random()) * 2
+    vector.y = (Math.random() - Math.random()) * 2;
   }, 500);
 }
 
 let lastDT = Date.now();
 let frame = 0;
-
 const render = () => {
   const dt = Date.now();
   frame++;
@@ -106,17 +114,14 @@ const render = () => {
     frame = 0;
     lastDT = dt;
   }
+
+  let i = 0;
+  lightGraphic.clear();
   for (const { container, vector } of characters) {
     const collisionDatas = Engine.collision({
       square: { x: container.x, y: container.y, w: characterSize, h: characterSize },
       vector: { x: vector.x, y: vector.y }
-    }, {
-      seed: 'seed',
-      width,
-      height,
-      tileSize,
-      grid
-    });
+    }, map);
     const collisionDirection: { x: boolean, y: boolean } = { x: false, y: false };
     for (const collisionData of collisionDatas) {
       switch (collisionData.direction) {
@@ -144,6 +149,13 @@ const render = () => {
     }
     if (!collisionDirection.x) container.x += vector.x;
     if (!collisionDirection.y) container.y += vector.y;
+
+    if (i++ < 40) {
+      const polygon = Lighting.getLightingPolygon({ x: container.x + characterSize / 2, y: container.y + characterSize / 2 }, map, 8);
+      lightGraphic.beginFill(0xFFFF00, 0.3);
+      lightGraphic.drawPolygon(polygon as any);
+      lightGraphic.endFill();
+    }
   }
 
   app.render();
@@ -179,23 +191,6 @@ function getVertexGraphics(vertices: any) {
 
     return graphics;
   });
-}
-
-function compressPolygon(polygon: any) {
-  const EPSILON = 0.002;
-  const DUPPLICATE_RANGE = 2;
-
-  return polygon.reduce((vertices: any, point: any, index: any) => {
-    const prevPoint = index === 0 ? polygon[polygon.length - 1] : polygon[index - 1];
-    const nextPoint = index === polygon.length - 1 ? polygon[0] : polygon[index + 1];
-    const prevVector = Math.abs(prevPoint.x - point.x) <= EPSILON ? 'y' : (Math.abs(prevPoint.y - point.y) <= EPSILON ? 'x' : undefined);
-    const nextVector = Math.abs(nextPoint.x - point.x) <= EPSILON ? 'y' : (Math.abs(nextPoint.y - point.y) <= EPSILON ? 'x' : undefined);
-    const isDuplicated = vertices.length > 0 && Math.abs(vertices[vertices.length - 1].x - point.x) <= DUPPLICATE_RANGE && Math.abs(vertices[vertices.length - 1].y - point.y) <= DUPPLICATE_RANGE;
-
-    if (!isDuplicated && (!prevVector || !nextVector || prevVector !== nextVector)) vertices.push([Math.round(point.x), Math.round(point.y)]);
-
-    return vertices;
-  }, []);
 }
 
 window.requestAnimationFrame(render);

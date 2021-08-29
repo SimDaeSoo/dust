@@ -1,4 +1,5 @@
 import * as Engine from './modules/Engine';
+import * as Lighting from './modules/Lighting';
 import * as Map from './modules/Map';
 import {
   Point,
@@ -17,6 +18,7 @@ import {
 
 export {
   Engine,
+  Lighting,
   Map,
   Point,
   Line,
