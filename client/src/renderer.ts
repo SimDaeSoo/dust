@@ -1,8 +1,9 @@
 import * as PIXI from 'pixi.js';
 import { OutlineFilter } from 'pixi-filters';
 import Stats from 'stats.js';
-import { Map, Engine, Lighting, Vector } from '@dust/core';
+import { Map, Point, Engine, Lighting, Vector, Square } from '@dust/core';
 import '../static/index.css';
+import Tilemap from './tilemap';
 
 const resolution = window.devicePixelRatio || 1;
 PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
@@ -29,7 +30,6 @@ document.body.appendChild(app.view);
 document.body.appendChild(stats.dom);
 
 // --------------------------------------------------------------------------
-const tileContainer = new PIXI.Container();
 const width = 40; // 1000
 const height = 22; // 500
 const tileSize = 32;
@@ -42,23 +42,12 @@ const map = {
   grid
 };
 const texture = PIXI.Texture.WHITE;
+const viewport: Square = { x: 64, y: 64, w: 320, h: 320 };
+const margin = 1;
+let targetContainer: any;
+const tilemap = new Tilemap(map, viewport, { margin });
+app.stage.addChild(tilemap.container);
 
-for (let y = 0; y < 22; y++) {
-  for (let x = 0; x < 40; x++) {
-    if (!grid[y][x] || grid[y][x].movable) continue;
-    const sprite = new PIXI.Sprite(texture);
-
-    sprite.width = tileSize;
-    sprite.height = tileSize;
-    sprite.x = x * tileSize;
-    sprite.y = y * tileSize;
-    sprite.tint = 0x555555;
-
-    tileContainer.addChild(sprite);
-  }
-}
-
-app.stage.addChild(tileContainer);
 // app.stage.filters = [new AdvancedBloomFilter()];
 const characters: Array<{ container: PIXI.Container, vector: Vector }> = [];
 const characterSize = 12;
@@ -85,6 +74,7 @@ for (let i = 0; i < 1; i++) {
     container,
     vector
   });
+  if (!targetContainer) targetContainer = container;
 
   setInterval(() => {
     vector.x = (Math.random() - Math.random()) * 2;
@@ -141,7 +131,14 @@ const render = () => {
       verticiesGraphic.endFill();
     }
   }
+  // Test Viewport Draw
+  viewport.x = targetContainer.x - 160 + characterSize / 2;
+  viewport.y = targetContainer.y - 160 + characterSize / 2;
+  verticiesGraphic.lineStyle({ width: 1, color: 0x0000FF });
+  verticiesGraphic.drawRect(viewport.x, viewport.y, viewport.w, viewport.h);
+  verticiesGraphic.endFill();
 
+  tilemap.update();
   app.render();
   stats.update();
   window.requestAnimationFrame(render);
@@ -165,7 +162,7 @@ window.requestAnimationFrame(render);
 //   const animatedSprite = new PIXI.AnimatedSprite(textures);
 //   animatedSprite.width = 64;
 //   animatedSprite.height = 64;
-//   animatedSprite.animationSpeed = 0.2;
+//   animatedSprite.animationSpeed = 1;
 //   animatedSprite.x = -32;
 //   animatedSprite.y = -64;
 //   animatedSprite.play();
