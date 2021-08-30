@@ -41,8 +41,10 @@ function print(map: MapData, options?: { checkPoints: Array<{ position: Point, c
     for (let x = 0; x < map.width; x++) {
       if (!map.grid[y][x].movable) {
         tileStrings[y].push('■');
-      } else if (map.grid[y][x].liquid !== 0) {
-        tileStrings[y].push('\x1b[34m●\x1b[0m');
+      } else if (map.grid[y][x].liquid > 0.5 || (y > 0 && map.grid[y - 1][x].liquid > 0)) {
+        tileStrings[y].push('\x1b[34m■\x1b[0m');
+      } else if (map.grid[y][x].liquid > 0) {
+        tileStrings[y].push('\x1b[34m_\x1b[0m');
       } else {
         tileStrings[y].push(' ');
       }

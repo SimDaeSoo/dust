@@ -4,9 +4,11 @@ import { print, generate } from "../modules/Map";
 import { step } from '../modules/LiquidSimulator';
 
 async function main(): Promise<void> {
-  await lightingTest();
-  await liquidTest();
-  await largeWorldLiquidSpeedTest();
+  for (let i = 0; i < 100; i++) {
+    await lightingTest();
+    await liquidTest();
+    await largeWorldLiquidSpeedTest();
+  }
 }
 
 function sleep(dt: number): Promise<void> {
