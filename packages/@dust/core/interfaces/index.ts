@@ -7,6 +7,10 @@ type Boundary<T> = { min: T, max: T };
 type Square = { x: number, y: number, w: number, h: number };
 type Dictionary<T> = { [key: string]: T };
 type Tile = {
+  diff: number,
+  liquid: number,
+  settled: boolean,
+  settleCount: number,
   movable: boolean
 };
 type MapData = {
