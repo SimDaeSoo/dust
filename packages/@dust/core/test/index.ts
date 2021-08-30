@@ -19,7 +19,7 @@ function sleep(dt: number): Promise<void> {
 
 async function lightingTest(): Promise<void> {
   const seed: string = `${Math.random()}`;
-  const width: number = 159;
+  const width: number = 186;
   const height: number = 35;
   const tileSize: number = 4;
   const map: MapData = {
@@ -45,7 +45,7 @@ async function lightingTest(): Promise<void> {
 
 async function liquidTest(): Promise<void> {
   const seed: string = `${Math.random()}`;
-  const width: number = 159;
+  const width: number = 186;
   const height: number = 35;
   const tileSize: number = 4;
   const map: MapData = {
@@ -58,14 +58,14 @@ async function liquidTest(): Promise<void> {
   console.clear();
   print(map);
 
-  for (let i = 0; i < 500; i++) {
+  for (let i = 0; i < 200; i++) {
     const lastDt = Date.now();
     step(map);
     const dt = Date.now() - lastDt;
     console.clear();
     print(map);
-    console.log(dt, 'ms');
-    await sleep(16);
+    console.log('processing per ms:', dt, 'ms');
+    await sleep(64);
   }
 
   console.log('Liquid Step Test Done...');
@@ -89,15 +89,15 @@ async function largeWorldLiquidSpeedTest() {
 
   let average = 0;
   let options: any = { currentPartition: 0, maximum: 10000, flow: 0 };
-  for (let i = 0; i < 2000; i++) {
+  console.log('Large World Liquid Simulation\n');
+  for (let i = 0; i < 50; i++) {
     const lastDt = Date.now();
     options = step(map, options);
     const dt = Date.now() - lastDt;
     average += dt;
-    console.clear();
-    console.log(dt, 'ms', '/ average', (average / (i + 1)).toFixed(2), 'ms\n');
+    console.log(`${i + 1}.`, dt, 'ms', '/ average', (average / (i + 1)).toFixed(2), 'ms');
   }
-  console.log(`width: ${width}`);
+  console.log(`\nwidth: ${width}`);
   console.log(`height: ${height}`);
   console.log(`grid: ${width * height} tiles`);
   console.log(`partition grid: ${options.maximum}`);
