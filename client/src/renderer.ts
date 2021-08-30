@@ -1,5 +1,7 @@
 import * as PIXI from 'pixi.js';
-import { Map, Engine, Lighting, Vector, Line, Dictionary, Point } from '@dust/core';
+import { OutlineFilter } from 'pixi-filters';
+import Stats from 'stats.js';
+import { Map, Engine, Lighting, Vector } from '@dust/core';
 import '../static/index.css';
 
 const resolution = window.devicePixelRatio || 1;
@@ -7,6 +9,7 @@ PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
 PIXI.settings.MIPMAP_TEXTURES = PIXI.MIPMAP_MODES.OFF;
 PIXI.settings.STRICT_TEXTURE_CACHE = true;
 
+const stats = new Stats();
 const app = new PIXI.Application({
   width: window.innerWidth,
   height: window.innerHeight,
@@ -22,31 +25,10 @@ const app = new PIXI.Application({
 
 app.view.style.width = '100%';
 app.view.style.height = '100%';
-
 document.body.appendChild(app.view);
-// for (let i = 0; i < 118; i++) {
-//   const src = `../static/assets/characters/body/1/${i.toString().padStart(3, '0')}.png`;
-//   PIXI.Loader.shared.add(src, src);
-// }
+document.body.appendChild(stats.dom);
 
-// PIXI.Loader.shared.load(() => {
-//   const textures = [];
-//   for (let i = 0; i < 118; i++) {
-//     const src = `../static/assets/characters/body/1/${i.toString().padStart(3, '0')}.png`;
-//     textures.push(PIXI.Texture.from(src));
-//   }
-
-//   const animatedSprite = new PIXI.AnimatedSprite(textures);
-//   animatedSprite.width = 64;
-//   animatedSprite.height = 64;
-//   animatedSprite.animationSpeed = 0.2;
-//   animatedSprite.x = -32;
-//   animatedSprite.y = -64;
-//   animatedSprite.play();
-
-//   container.addChild(animatedSprite);
-// });
-
+// --------------------------------------------------------------------------
 const tileContainer = new PIXI.Container();
 const width = 40; // 1000
 const height = 22; // 500
@@ -70,16 +52,19 @@ for (let y = 0; y < 22; y++) {
     sprite.height = tileSize;
     sprite.x = x * tileSize;
     sprite.y = y * tileSize;
+    sprite.tint = 0x555555;
 
     tileContainer.addChild(sprite);
   }
 }
 
 app.stage.addChild(tileContainer);
+// app.stage.filters = [new AdvancedBloomFilter()];
 const characters: Array<{ container: PIXI.Container, vector: Vector }> = [];
 const characterSize = 12;
 const lightGraphic = new PIXI.Graphics();
-lightGraphic.filters = [new PIXI.filters.BlurFilter()];
+
+lightGraphic.filters = [new OutlineFilter(4, 0xFFFFFF), new PIXI.filters.BlurFilter()];
 const verticiesGraphic = new PIXI.Graphics();
 
 app.stage.addChild(lightGraphic);
@@ -107,19 +92,10 @@ for (let i = 0; i < 1; i++) {
   }, 500);
 }
 
-let lastDT = Date.now();
-let frame = 0;
 const render = () => {
-  const dt = Date.now();
-  frame++;
-  if (dt - lastDT >= 1000) {
-    console.log(frame);
-    frame = 0;
-    lastDT = dt;
-  }
-
   lightGraphic.clear();
   verticiesGraphic.clear();
+
   for (const { container, vector } of characters) {
     const collisionDatas = Engine.collision({
       square: { x: container.x, y: container.y, w: characterSize, h: characterSize },
@@ -155,7 +131,7 @@ const render = () => {
 
     const polygon = Lighting.getLightingPolygon({ x: container.x + characterSize / 2, y: container.y + characterSize / 2 }, map, 8);
     lightGraphic.beginFill(0xFFFFFF, 0.3);
-    lightGraphic.drawPolygon(polygon as any);
+    lightGraphic.drawPolygon(polygon as Array<PIXI.Point>);
     lightGraphic.endFill();
 
     const size = 2;
@@ -167,38 +143,32 @@ const render = () => {
   }
 
   app.render();
+  stats.update();
   window.requestAnimationFrame(render);
 };
 
-// const update = (dt: number) => {
-//   container.y += 1;
-
-//   // const collisionDT = Engine.vectorSquareInterSection()
-//   console.log('update', dt);
-// };
-
-function getLineGraphics(lines: any) {
-  return lines.map((line: any) => {
-    const graphics = new PIXI.Graphics();
-
-    graphics.beginFill(0xFF0000);
-    graphics.drawRoundedRect(line[0].x - 1 / 2, line[0].y - 1 / 2, (line[1].x - line[0].x) + 1, (line[1].y - line[0].y) + 1, 1 / 2);
-    graphics.endFill();
-
-    return graphics;
-  });
-}
-
-function getVertexGraphics(vertices: any) {
-  return vertices.map((vertex: any) => {
-    const graphics = new PIXI.Graphics();
-
-    graphics.beginFill(0x00AAAA);
-    graphics.drawRect(vertex.x - 4 / 2, vertex.y - 4 / 2, 4, 4);
-    graphics.endFill();
-
-    return graphics;
-  });
-}
-
 window.requestAnimationFrame(render);
+
+// ---------------------------------------------------------------------------------
+// for (let i = 0; i < 118; i++) {
+//   const src = `../static/assets/characters/body/1/${i.toString().padStart(3, '0')}.png`;
+//   PIXI.Loader.shared.add(src, src);
+// }
+
+// PIXI.Loader.shared.load(() => {
+//   const textures = [];
+//   for (let i = 0; i < 118; i++) {
+//     const src = `../static/assets/characters/body/1/${i.toString().padStart(3, '0')}.png`;
+//     textures.push(PIXI.Texture.from(src));
+//   }
+
+//   const animatedSprite = new PIXI.AnimatedSprite(textures);
+//   animatedSprite.width = 64;
+//   animatedSprite.height = 64;
+//   animatedSprite.animationSpeed = 0.2;
+//   animatedSprite.x = -32;
+//   animatedSprite.y = -64;
+//   animatedSprite.play();
+
+//   container.addChild(animatedSprite);
+// });
