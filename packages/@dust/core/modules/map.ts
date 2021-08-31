@@ -1,7 +1,7 @@
 import { MapData, Grid, Tile, Point } from "../interfaces";
 import * as seedrandom from 'seedrandom';
 
-function generate(width: number, height: number, seed: string, density: number): Grid<Tile> {
+function generate(width: number, height: number, seed: string, options: { density: number, initLiquid: boolean } = { density: 0.3, initLiquid: false }): Grid<Tile> {
   const grid: Grid<Tile> = [];
   const random = seedrandom(seed);
 
@@ -9,8 +9,22 @@ function generate(width: number, height: number, seed: string, density: number):
     grid.push(new Array(width));
 
     for (let x = 0; x < width; x++) {
-      if (random() < density) {
-        grid[y][x] = { movable: false };
+      if (random() < options.density) {
+        grid[y][x] = {
+          diff: 0,
+          liquid: 0,
+          settled: false,
+          settleCount: 0,
+          movable: false
+        };
+      } else {
+        grid[y][x] = {
+          diff: 0,
+          liquid: options.initLiquid ? (Math.random() < 0.1 ? 3 : 0) : 0,
+          settled: false,
+          settleCount: 0,
+          movable: true
+        };
       }
     }
   }
@@ -18,21 +32,32 @@ function generate(width: number, height: number, seed: string, density: number):
   return grid;
 }
 
-function print(map: MapData, options?: { checkPoints: Array<Point> }): void {
+function print(map: MapData, options?: { checkPoints: Array<{ position: Point, color: string, marker: string }> }): void {
+  const tileStrings: Array<Array<string>> = [];
+
   for (let y = 0; y < map.height; y++) {
-    const tiles: Array<string> = [];
+    tileStrings.push([]);
 
     for (let x = 0; x < map.width; x++) {
-      const filteredcheckPoints = options?.checkPoints.filter(({ x: x1, y: y1 }: Point) => Math.floor(x1 / map.tileSize) === x && Math.floor(y1 / map.tileSize) === y);
-      if (filteredcheckPoints?.length) {
-        tiles.push('\x1b[31m◈\x1b[0m');
-      } else if (map.grid[y][x] && !map.grid[y][x].movable) {
-        tiles.push('■');
+      if (!map.grid[y][x].movable) {
+        tileStrings[y].push('■');
+      } else if (map.grid[y][x].liquid > 0.5 || (y > 0 && map.grid[y - 1][x].liquid > 0)) {
+        tileStrings[y].push('\x1b[34m■\x1b[0m');
+      } else if (map.grid[y][x].liquid > 0) {
+        tileStrings[y].push('\x1b[34m_\x1b[0m');
       } else {
-        tiles.push('□');
+        tileStrings[y].push(' ');
       }
     }
-    console.log(tiles.toString().replace(/,/g, ' '));
+  }
+
+  const checkPoints = options?.checkPoints || [];
+  for (let checkPoint of checkPoints) {
+    tileStrings[Math.floor(checkPoint.position.y / map.tileSize)][Math.floor(checkPoint.position.x / map.tileSize)] = `${checkPoint.color}${checkPoint.marker}\x1b[0m`;
+  }
+
+  for (let y = 0; y < map.height; y++) {
+    console.log(tileStrings[y].toString().replace(/,/g, ' '));
   }
 }
 
