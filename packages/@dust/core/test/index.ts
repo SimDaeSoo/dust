@@ -84,8 +84,8 @@ async function liquidTest(): Promise<void> {
 
 async function largeWorldLiquidSpeedTest() {
   const seed: string = `${Math.random()}`;
-  const width: number = 2000;
-  const height: number = 800;
+  const width: number = 8400;
+  const height: number = 2400;
   const tileSize: number = 1;
   const map: MapData = {
     seed,
