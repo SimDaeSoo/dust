@@ -32,18 +32,18 @@ async function lightingTest(): Promise<void> {
   const position: Point = { x: 198, y: 58 };
   const tiles = getLightingPolygon(position, map, 10, { getTiles: true });
   const polygon = getLightingPolygon(position, map, 10);
-  print(map, { checkPoints: [{ position, color: '\x1b[33m', marker: '◈' }] });
+  print(map, { checkPoints: [{ position, color: '\x1b[31m', marker: '■' }] });
   console.log(new Array(width).fill('-').toString().replace(/,/g, '-'));
   console.log('Grid searching map visualizations');
 
   print(map, {
     checkPoints: [
-      ...tiles.map(({ x, y }) => ({ position: { x: x * tileSize, y: y * tileSize }, color: '\x1b[31m', marker: '◈' })),
-      { position: { x: position.x + tileSize, y: position.y }, color: '\x1b[31m', marker: '◈' },
-      { position: { x: position.x - tileSize, y: position.y }, color: '\x1b[31m', marker: '◈' },
-      { position: { x: position.x, y: position.y + tileSize }, color: '\x1b[31m', marker: '◈' },
-      { position: { x: position.x, y: position.y - tileSize }, color: '\x1b[31m', marker: '◈' },
-      { position, color: '\x1b[34m', marker: '◈' },
+      ...tiles.map(({ x, y }) => ({ position: { x: x * tileSize, y: y * tileSize }, color: '\x1b[30m', marker: '◈' })),
+      { position: { x: position.x + tileSize, y: position.y }, color: '\x1b[30m', marker: '◈' },
+      { position: { x: position.x - tileSize, y: position.y }, color: '\x1b[30m', marker: '◈' },
+      { position: { x: position.x, y: position.y + tileSize }, color: '\x1b[30m', marker: '◈' },
+      { position: { x: position.x, y: position.y - tileSize }, color: '\x1b[30m', marker: '◈' },
+      { position, color: '\x1b[31m', marker: '■' },
     ]
   });
   console.log('Lighting Polygon is :', polygon, '\n');
@@ -67,14 +67,14 @@ async function liquidTest(): Promise<void> {
   console.clear();
   print(map);
 
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 300; i++) {
     const lastDt = Date.now();
     step(map);
     const dt = Date.now() - lastDt;
     console.clear();
     print(map);
     console.log('processing per ms:', dt, 'ms');
-    await sleep(600);
+    await sleep(64);
   }
 
   console.log('Liquid Step Test Done...');
@@ -92,16 +92,15 @@ async function largeWorldLiquidSpeedTest() {
     width,
     height,
     tileSize,
-    grid: generate(width, height, seed, { density: 0.3, initLiquid: true })
+    grid: generate(width, height, seed, { density: 0.3, initLiquid: true }),
   };
   console.clear();
-  console.log('Large World Liquid Simulation\n');
 
   for (let j = 1; j <= 20; j++) {
     const maximum = j * 10000;
     let average = 0;
     let options: any = { currentPartition: 0, maximum, flow: 0 };
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i <= width * height / maximum + 1; i++) {
       const lastDt = Date.now();
       options = step(map, options);
       const dt = Date.now() - lastDt;
