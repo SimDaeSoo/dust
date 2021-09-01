@@ -53,7 +53,11 @@ function print(map: MapData, options?: { checkPoints: Array<{ position: Point, c
 
   const checkPoints = options?.checkPoints || [];
   for (let checkPoint of checkPoints) {
-    tileStrings[Math.floor(checkPoint.position.y / map.tileSize)][Math.floor(checkPoint.position.x / map.tileSize)] = `${checkPoint.color}${checkPoint.marker}\x1b[0m`;
+    if (map.grid[Math.floor(checkPoint.position.y / map.tileSize)][Math.floor(checkPoint.position.x / map.tileSize)].movable) {
+      tileStrings[Math.floor(checkPoint.position.y / map.tileSize)][Math.floor(checkPoint.position.x / map.tileSize)] = `${checkPoint.color}${checkPoint.marker}\x1b[0m`;
+    } else {
+      tileStrings[Math.floor(checkPoint.position.y / map.tileSize)][Math.floor(checkPoint.position.x / map.tileSize)] = `\x1b[32m■\x1b[0m`;
+    }
   }
 
   for (let y = 0; y < map.height; y++) {

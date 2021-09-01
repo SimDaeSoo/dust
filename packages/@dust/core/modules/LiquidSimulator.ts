@@ -46,10 +46,8 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
         cell.liquid = 0;
         continue;
       }
-      if (cell.liquid == 0)
-        continue;
-      if (cell.settled)
-        continue;
+      if (cell.liquid == 0) continue;
+      if (cell.settled) continue;
       if (cell.liquid < MIN_LIQUID_VALUE) {
         cell.liquid = 0;
         continue;
@@ -62,9 +60,7 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
       if (y < map.height - 1 && map.grid[y + 1][x].movable) {
         flow = calculateVerticalFlowValue(cell.liquid, map.grid[y + 1][x]) - map.grid[y + 1][x].liquid;
 
-        if (map.grid[y + 1][x].liquid > 0 && flow > MIN_FLOW) {
-          flow *= FLOW_SPEED;
-        }
+        if (map.grid[y + 1][x].liquid > 0 && flow > MIN_FLOW) flow *= FLOW_SPEED;
 
         flow = Math.max(flow, 0);
         if (flow > Math.min(MAX_FLOW, cell.liquid)) {
@@ -86,9 +82,7 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
       if (x > 0 && map.grid[y][x - 1].movable) {
         flow = (remainingValue - map.grid[y][x - 1].liquid) / 4;
 
-        if (flow > MIN_FLOW) {
-          flow *= FLOW_SPEED;
-        }
+        if (flow > MIN_FLOW) flow *= FLOW_SPEED;
 
         flow = Math.max(flow, 0);
         if (flow > Math.min(MAX_FLOW, remainingValue)) {
@@ -110,9 +104,7 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
 
       if (x < map.width - 1 && map.grid[y][x + 1].movable) {
         flow = (remainingValue - map.grid[y][x + 1].liquid) / 3;
-        if (flow > MIN_FLOW) {
-          flow *= FLOW_SPEED;
-        }
+        if (flow > MIN_FLOW) flow *= FLOW_SPEED;
 
         flow = Math.max(flow, 0);
         if (flow > Math.min(MAX_FLOW, remainingValue)) {
@@ -134,9 +126,7 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
 
       if (y > 0 && map.grid[y - 1][x].movable) {
         flow = remainingValue - calculateVerticalFlowValue(remainingValue, map.grid[y - 1][x]);
-        if (flow > MIN_FLOW) {
-          flow *= FLOW_SPEED;
-        }
+        if (flow > MIN_FLOW) flow *= FLOW_SPEED;
 
         flow = Math.max(flow, 0);
         if (flow > Math.min(MAX_FLOW, remainingValue)) {
@@ -158,9 +148,7 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
 
       if (startValue == remainingValue) {
         cell.settleCount++;
-        if (cell.settleCount >= 10) {
-          cell.settled = true;
-        }
+        if (cell.settleCount >= 10) cell.settled = true;
       } else {
         if (y > 0 && map.grid[y - 1][x]) map.grid[y - 1][x].settled = false;
         if (y < map.height - 1 && map.grid[y + 1][x]) map.grid[y + 1][x].settled = false;
