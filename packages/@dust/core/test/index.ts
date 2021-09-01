@@ -84,8 +84,8 @@ async function liquidTest(): Promise<void> {
 
 async function largeWorldLiquidSpeedTest() {
   const seed: string = `${Math.random()}`;
-  const width: number = 8400;
-  const height: number = 2400;
+  const width: number = 2400;
+  const height: number = 800;
   const tileSize: number = 1;
   const map: MapData = {
     seed,
@@ -100,11 +100,12 @@ async function largeWorldLiquidSpeedTest() {
     const maximum = j * 10000;
     let average = 0;
     let options: any = { currentPartition: 0, maximum, flow: 0 };
-    for (let i = 0; i <= width * height / maximum + 1; i++) {
+    for (let i = 0; i <= width * height / maximum * 2 + 1; i++) {
       const lastDt = Date.now();
       options = step(map, options);
       const dt = Date.now() - lastDt;
       average += dt;
+      console.log(dt);
     }
     console.log(`width: ${width}`);
     console.log(`height: ${height}`);
@@ -113,6 +114,7 @@ async function largeWorldLiquidSpeedTest() {
     console.log('average', (average / 50).toFixed(2), 'ms');
     console.log(`liquid processing per frame: ${(width * height / maximum).toFixed(2)}`);
     console.log(`liquid processing per ms: ${(width * height / maximum * 16.6666).toFixed(2)} ms\n`);
+    await sleep(5000);
     console.log('-------------------------------------');
   }
 
