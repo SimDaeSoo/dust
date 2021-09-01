@@ -47,8 +47,8 @@ async function main(): Promise<void> {
   await preload();
 
   // --------------------------------------------------------------------------
-  const width = 8400; // 2000
-  const height = 2400; // 800
+  const width = 80; // 8400
+  const height = 45; // 2400
   const tileSize = 16;
   const grid = Map.generate(width, height, Math.random().toString(), { density: 0.35, initLiquid: false });
   const map = {
