@@ -25,6 +25,8 @@ async function main(): Promise<void> {
   PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
   PIXI.settings.MIPMAP_TEXTURES = PIXI.MIPMAP_MODES.OFF;
   PIXI.settings.STRICT_TEXTURE_CACHE = true;
+  PIXI.settings.PRECISION_FRAGMENT = PIXI.PRECISION.LOW;
+  PIXI.settings.PRECISION_VERTEX = PIXI.PRECISION.LOW;
 
   const stats = new Stats();
   const app = new PIXI.Application({
@@ -47,8 +49,8 @@ async function main(): Promise<void> {
   await preload();
 
   // --------------------------------------------------------------------------
-  const width = 80; // 8400
-  const height = 45; // 2400
+  const width = 8400; // 8400
+  const height = 2400; // 2400
   const tileSize = 16;
   const grid = Map.generate(width, height, Math.random().toString(), { density: 0.35, initLiquid: false });
   const map = {
@@ -163,12 +165,12 @@ async function main(): Promise<void> {
           lightGraphic.drawPolygon(polygon as Array<PIXI.Point>);
           lightGraphic.endFill();
 
-          const size = 2;
+          const size = 4;
+          verticiesGraphic.beginFill(0xFFAA00);
           for (const point of polygon) {
-            verticiesGraphic.beginFill(0x00AA00);
-            verticiesGraphic.drawPolygon([{ x: point.x - size, y: point.y - size }, { x: point.x + size, y: point.y - size }, { x: point.x + size, y: point.y + size }, { x: point.x - size, y: point.y + size }] as any);
-            verticiesGraphic.endFill();
+            verticiesGraphic.drawRect(point.x - size / 2, point.y - size / 2, size, size);
           }
+          verticiesGraphic.endFill();
         } else {
           sprite.tint = 0xFF0000;
         }
