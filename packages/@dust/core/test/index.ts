@@ -18,39 +18,48 @@ function sleep(dt: number): Promise<void> {
 }
 
 async function lightingTest(): Promise<void> {
-  const seed: string = `${Math.random()}`;
   const width: number = 35;
   const height: number = 35;
   const tileSize: number = 4;
-  const map: MapData = {
-    seed,
-    width,
-    height,
-    tileSize,
-    grid: generate(width, height, seed, { density: 0.3, initLiquid: false }),
-    unstablePoints: [],
-    nextUnstablePoints: []
-  };
-  const position: Point = { x: 50, y: 50 };
-  map.grid[Math.floor(position.y / tileSize)][Math.floor(position.x / tileSize)].movable = true;
 
-  const tiles = getLightingPolygon(position, map, 10, { getTiles: true });
-  const polygon = getLightingPolygon(position, map, 10);
-  print(map, { checkPoints: [{ position, color: '\x1b[31m', marker: '■' }] });
-  console.log(new Array(width).fill('-').toString().replace(/,/g, '-'));
-  console.log('Grid searching map visualizations');
+  for (let i = 0; i < 10; i++) {
+    const seed: string = `${Math.random()}`;
+    const map: MapData = {
+      seed,
+      width,
+      height,
+      tileSize,
+      grid: generate(width, height, seed, { density: 0.3, initLiquid: false }),
+      unstablePoints: [],
+      nextUnstablePoints: []
+    };
+    const position: Point = { x: 50, y: 50 };
+    map.grid[Math.floor(position.y / tileSize)][Math.floor(position.x / tileSize)].movable = true;
 
-  print(map, {
-    checkPoints: [
-      ...tiles.map(({ x, y }) => ({ position: { x: x * tileSize, y: y * tileSize }, color: '\x1b[30m', marker: '◈' })),
-      { position: { x: position.x + tileSize, y: position.y }, color: '\x1b[30m', marker: '◈' },
-      { position: { x: position.x - tileSize, y: position.y }, color: '\x1b[30m', marker: '◈' },
-      { position: { x: position.x, y: position.y + tileSize }, color: '\x1b[30m', marker: '◈' },
-      { position: { x: position.x, y: position.y - tileSize }, color: '\x1b[30m', marker: '◈' },
-      { position, color: '\x1b[31m', marker: '■' },
-    ]
-  });
-  console.log('Lighting Polygon is :', polygon, '\n');
+    const tiles = getLightingPolygon(position, map, 10, { getTiles: true });
+    const polygon = getLightingPolygon(position, map, 10);
+    console.clear();
+    print(map, { checkPoints: [{ position, color: '\x1b[31m', marker: '■' }] });
+    console.log(new Array(width).fill('-').toString().replace(/,/g, '-'));
+    console.log('Grid searching map visualizations');
+    console.log('After 5 seconds the next test starts');
+    await sleep(500);
+
+    console.clear();
+    print(map, {
+      checkPoints: [
+        ...tiles.map(({ x, y }) => ({ position: { x: x * tileSize, y: y * tileSize }, color: '\x1b[30m', marker: '◈' })),
+        { position: { x: position.x + tileSize, y: position.y }, color: '\x1b[30m', marker: '◈' },
+        { position: { x: position.x - tileSize, y: position.y }, color: '\x1b[30m', marker: '◈' },
+        { position: { x: position.x, y: position.y + tileSize }, color: '\x1b[30m', marker: '◈' },
+        { position: { x: position.x, y: position.y - tileSize }, color: '\x1b[30m', marker: '◈' },
+        { position, color: '\x1b[31m', marker: '■' },
+      ]
+    });
+    console.log('Lighting Polygon is :', polygon, '\n');
+    await sleep(500);
+  }
+
   console.log('Lighting Test Done...');
   console.log('After 5 seconds the next test starts');
   await sleep(5000);
@@ -98,7 +107,6 @@ async function liquidTest(): Promise<void> {
     console.log('processing per ms:', dt, 'ms');
     console.log('processing average per ms:', (average / stepCount).toFixed(2), 'ms');
     console.log('processing max ms:', max, 'ms');
-    console.log(options);
     await sleep(100);
   }
 
