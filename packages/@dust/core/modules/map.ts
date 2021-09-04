@@ -21,7 +21,7 @@ function generate(width: number, height: number, seed: string, options: { densit
       } else {
         grid[y][x] = {
           diff: 0,
-          liquid: options.initLiquid ? (Math.random() < 0.1 ? 3 : 0) : 0,
+          liquid: options.initLiquid ? (Math.random() < 0.05 ? 3 : 0) : 0,
           stableLevel: 0,
           movable: true,
           stable: false,

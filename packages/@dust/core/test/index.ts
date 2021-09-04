@@ -5,7 +5,7 @@ import { step } from '../modules/LiquidSimulator';
 
 async function main(): Promise<void> {
   await lightingTest();
-  // await liquidTest();
+  await liquidTest();
   await hugeWorldLiquidTest();
 }
 
@@ -107,8 +107,8 @@ async function liquidTest(): Promise<void> {
 
 async function hugeWorldLiquidTest(): Promise<void> {
   const seed: string = `${Math.random()}`;
-  const width: number = 300;
-  const height: number = 300;
+  const width: number = 1280;
+  const height: number = 720;
   const tileSize: number = 4;
   const map: MapData = {
     seed,
