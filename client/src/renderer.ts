@@ -1,13 +1,26 @@
 import * as PIXI from 'pixi.js';
 import Stats from 'stats.js';
-import { Map, Engine, Lighting, Vector, Square } from '@dust/core';
+import { Map, Engine, Lighting, Vector, Square, MapData, LiquidSimulator } from '@dust/core';
 import '../static/index.css';
 import Tilemap from './tilemap';
+import { TILEMAP_DATA } from './constants';
+import { OutlineFilter } from '@pixi/filter-outline';
+import { AdvancedBloomFilter } from '@pixi/filter-advanced-bloom';
 
 async function preload(): Promise<void> {
-  const srcs: Array<string> = [
-    '../static/assets/tiles/000.png'
-  ];
+  const srcs: Array<string> = [];
+
+  for (const key of TILEMAP_DATA) {
+    for (let i = 1; i <= 60; i++) {
+      const src = `../static/assets/tiles/${key}/Tile_${i.toString().padStart(2, '0')}.png`;
+      srcs.push(src);
+    }
+  }
+
+  for (let i = 0; i < 36; i++) {
+    const src = `../static/assets/tiles/water/${i.toString().padStart(2, '0')}.png`;
+    srcs.push(src);
+  }
 
   return new Promise((resolve) => {
     for (const src of srcs) {
@@ -48,40 +61,42 @@ async function main(): Promise<void> {
   document.body.appendChild(stats.dom);
   await preload();
 
+  const riquidStepOptions: { currentPartition: number, maximum: number, processOrder: number } = { currentPartition: 0, maximum: 40000, processOrder: 0 };
+  const map: MapData = Map.generate(40, 23, 32, `${Math.random()}`, {
+    step: 4,
+    clearTop: 3,
+    tileTypes: [4],
+    density: {
+      block: 0.3,
+      liquid: 0.3
+    },
+    birthLimit: 3,
+    deathLimit: 2
+  });
   // --------------------------------------------------------------------------
-  const width = 80; // 8400
-  const height = 45; // 2400
-  const tileSize = 16;
-  const grid = Map.generate(width, height, Math.random().toString(), { density: 0.35, initLiquid: false });
-  const map = {
-    seed: 'seed',
-    width,
-    height,
-    tileSize,
-    grid
-  };
   const texture = PIXI.Texture.WHITE;
-  const viewport: Square = { x: 64, y: 64, w: 320, h: 320 };
+  const viewport: Square = { x: 64, y: 64, w: 1280, h: 720 };
   const margin = 2;
   const tilemap = new Tilemap(map, viewport, { margin });
   let targetContainer: any;
   app.stage.addChild(tilemap.container);
 
-
   // Graphics
   const lightGraphic = new PIXI.Graphics();
   const verticiesGraphic = new PIXI.Graphics();
 
-  // lightGraphic.filters = [new PIXI.filters.BlurFilter()];
+  // Test Light Filters
+  app.stage.filters = [new AdvancedBloomFilter({ quality: 8 })];
+  lightGraphic.filters = [new OutlineFilter(Math.floor(map.tileSize / 2), 0xFFFFFF, 0.5)];
 
   app.stage.addChild(lightGraphic);
   app.stage.addChild(verticiesGraphic);
 
   // Character
   const characters: Array<{ container: PIXI.Container, vector: Vector, sprite: PIXI.Sprite }> = [];
-  const characterSize = 8;
+  const characterSize = 16;
 
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 1; i++) {
     const container = new PIXI.Container();
     const sprite = new PIXI.Sprite(texture);
     sprite.width = characterSize;
@@ -105,14 +120,14 @@ async function main(): Promise<void> {
     }
   }
 
-  const LIGHTING_FRAME_UPDATE = 1;
-  let lightingFrame = 0;
-
+  let envFrame = 0;
   const render = () => {
-    lightingFrame++;
-    const isLightingFrame = lightingFrame % LIGHTING_FRAME_UPDATE === 0;
+    envFrame++;
+    const isLightingFrame = envFrame % 2 === 0;
+    const isLiquidFrame = !isLightingFrame;
+
     if (isLightingFrame) {
-      lightingFrame = 0;
+      envFrame = 0;
       lightGraphic.clear();
       verticiesGraphic.clear();
     }
@@ -151,26 +166,26 @@ async function main(): Promise<void> {
       if (!collisionDirection.y) container.y += vector.y;
 
       if (isLightingFrame) {
-        const LIGHT_LENGTH = 8;
+        const LIGHT_LENGTH = 6;
         const isInViewPort: boolean =
-          container.x - (tileSize * LIGHT_LENGTH) <= viewport.x + viewport.w &&
-          container.y - (tileSize * LIGHT_LENGTH) <= viewport.y + viewport.h &&
-          container.x + characterSize + (tileSize * LIGHT_LENGTH) >= viewport.x &&
-          container.y + characterSize + (tileSize * LIGHT_LENGTH) >= viewport.y;
+          container.x - (map.tileSize * LIGHT_LENGTH) <= viewport.x + viewport.w &&
+          container.y - (map.tileSize * LIGHT_LENGTH) <= viewport.y + viewport.h &&
+          container.x + characterSize + (map.tileSize * LIGHT_LENGTH) >= viewport.x &&
+          container.y + characterSize + (map.tileSize * LIGHT_LENGTH) >= viewport.y;
 
         if (isInViewPort) {
           sprite.tint = 0xFF00FF;
           const polygon = Lighting.getLightingPolygon({ x: container.x + characterSize / 2, y: container.y + characterSize / 2 }, map, LIGHT_LENGTH);
-          lightGraphic.beginFill(0xFFFF00, 0.2);
+          lightGraphic.beginFill(0xFFFFFF, 0.2);
           lightGraphic.drawPolygon(polygon as Array<PIXI.Point>);
           lightGraphic.endFill();
 
-          const size = 4;
-          verticiesGraphic.beginFill(0xFFAA00);
-          for (const point of polygon) {
-            verticiesGraphic.drawRect(point.x - size / 2, point.y - size / 2, size, size);
-          }
-          verticiesGraphic.endFill();
+          // const size = 4;
+          // verticiesGraphic.beginFill(0xFF0000);
+          // for (const point of polygon) {
+          //   verticiesGraphic.drawRect(point.x - size / 2, point.y - size / 2, size, size);
+          // }
+          // verticiesGraphic.endFill();
         } else {
           sprite.tint = 0xFF0000;
         }
@@ -179,16 +194,20 @@ async function main(): Promise<void> {
 
     // Test Viewport Draw
     if (isLightingFrame) {
-      viewport.x = targetContainer.x - Math.floor(viewport.w / 2) + characterSize / 2;
-      viewport.y = targetContainer.y - Math.floor(viewport.h / 2) + characterSize / 2;
-      verticiesGraphic.lineStyle({ width: 1, color: 0x0000FF });
-      verticiesGraphic.drawRect(viewport.x, viewport.y, viewport.w, viewport.h);
-      verticiesGraphic.endFill();
+      viewport.x = targetContainer.x - Math.floor(viewport.w / 2);
+      viewport.y = targetContainer.y - Math.floor(viewport.h / 2);
+      // verticiesGraphic.lineStyle({ width: 2, color: 0x0000FF });
+      // verticiesGraphic.drawRect(viewport.x, viewport.y, viewport.w, viewport.h);
+      // verticiesGraphic.endFill();
     }
-
+    if (isLiquidFrame) {
+      LiquidSimulator.step(map, riquidStepOptions);
+    }
     tilemap.update();
     app.render();
     stats.update();
+    app.stage.x = 640 - targetContainer.x;
+    app.stage.y = 360 - targetContainer.y;
     window.requestAnimationFrame(render);
   };
 

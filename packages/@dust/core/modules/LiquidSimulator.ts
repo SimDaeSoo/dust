@@ -19,19 +19,18 @@ function calculateVerticalFlowValue(remainingLiquid: number, destination: Tile):
   }
 }
 
-function step(map: MapData, options: { currentPartition: number, maximum: number, processOrder: number } = { currentPartition: 0, maximum: map.height * map.width, processOrder: 0 }): { currentPartition: number, maximum: number, processOrder: number } {
-  let { currentPartition, maximum, processOrder } = options;
+function step(map: MapData, options: { currentPartition: number, maximum: number, processOrder: number }): void {
   let accumulation = 0;
   let flow = 0;
 
-  if (processOrder === 0) {
-    for (let i = currentPartition; i < map.unstablePoints.length; i++) {
-      if (accumulation >= maximum) return { currentPartition, maximum, processOrder: 0 };
+  if (options.processOrder === 0) {
+    for (let i = options.currentPartition; i < map.unstablePoints.length; i++) {
+      if (accumulation >= options.maximum) return;
       const { x, y } = map.unstablePoints[i];
       const cell = map.grid[y][x];
       let remainingValue = cell.liquid;
 
-      currentPartition++;
+      options.currentPartition++;
       accumulation++;
 
       if (y < map.height - 1 && map.grid[y + 1][x].movable) {
@@ -104,16 +103,16 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
     }
   }
 
-  if (processOrder === 0 && currentPartition >= map.unstablePoints.length - 1) {
-    processOrder = 1;
-    currentPartition = 0;
+  if (options.processOrder === 0 && options.currentPartition >= map.unstablePoints.length - 1) {
+    options.processOrder = 1;
+    options.currentPartition = 0;
   }
 
-  if (processOrder === 1) {
-    for (let i = currentPartition; i < map.unstablePoints.length; i++) {
-      if (accumulation >= maximum) return { currentPartition, maximum, processOrder: 1 };
-      const { x, y } = map.unstablePoints[i];
-      currentPartition++;
+  if (options.processOrder === 1) {
+    while (map.unstablePoints.length) {
+      if (accumulation >= options.maximum) return;
+      const { x, y } = map.unstablePoints.pop() || { x: 0, y: 0 };
+      options.currentPartition++;
       accumulation++;
       map.grid[y][x].liquid += map.grid[y][x].diff;
 
@@ -163,15 +162,15 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
       map.grid[y][x].diff = 0;
     }
 
-    processOrder = 2;
-    currentPartition = 0;
+    options.processOrder = 2;
+    options.currentPartition = 0;
   }
 
-  if (processOrder === 2) {
-    for (let i = currentPartition; i < map.nextUnstablePoints.length; i++) {
-      if (accumulation >= maximum) return { currentPartition, maximum, processOrder: 2 };
+  if (options.processOrder === 2) {
+    for (let i = options.currentPartition; i < map.nextUnstablePoints.length; i++) {
+      if (accumulation >= options.maximum) return;
       const { x, y } = map.nextUnstablePoints[i];
-      currentPartition++;
+      options.currentPartition++;
       accumulation++;
       map.grid[y][x].checked = false;
     }
@@ -179,9 +178,8 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
     map.unstablePoints = map.nextUnstablePoints;
     map.nextUnstablePoints = [];
 
-    return { currentPartition: 0, maximum, processOrder: 0 };
-  } else {
-    return { currentPartition, maximum, processOrder };
+    options.currentPartition = 0;
+    options.processOrder = 0;
   }
 }
 

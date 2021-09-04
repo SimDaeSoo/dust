@@ -1,15 +1,39 @@
 import { MapData, Grid, Tile, Point } from "../interfaces";
 import * as seedrandom from 'seedrandom';
 
-function generate(width: number, height: number, seed: string, options: { density: number, initLiquid: boolean } = { density: 0.3, initLiquid: false }): Grid<Tile> {
-  const grid: Grid<Tile> = [];
+function generate(
+  width: number,
+  height: number,
+  tileSize: number,
+  seed: string,
+  options: {
+    step: number,
+    clearTop: number,
+    tileTypes: Array<number>,
+    density: {
+      block: number,
+      liquid: number
+    },
+    deathLimit: number,
+    birthLimit: number
+  }): MapData {
+  const { step, density, deathLimit, birthLimit, clearTop } = options;
+  const baseGrid: Grid<boolean> = createEmptyBoolGrid(width, height);
   const random = seedrandom(seed);
+  const unstablePoints: Array<Point> = [];
 
+  fillRandomGrid(baseGrid, seed, density.block);
+
+  for (let i = 0; i < step; i++) {
+    nextStep(baseGrid, { deathLimit, birthLimit })
+  }
+
+  const grid: Grid<Tile> = [];
   for (let y = 0; y < height; y++) {
     grid.push(new Array(width));
 
     for (let x = 0; x < width; x++) {
-      if (random() < options.density) {
+      if (y >= clearTop && baseGrid[y][x]) {
         grid[y][x] = {
           diff: 0,
           liquid: 0,
@@ -17,33 +41,176 @@ function generate(width: number, height: number, seed: string, options: { densit
           movable: false,
           stable: false,
           checked: false,
+          tileNumber: 0,
+          tileType: options.tileTypes[Math.floor(Math.random() * options.tileTypes.length)]
         };
       } else {
         grid[y][x] = {
           diff: 0,
-          liquid: options.initLiquid ? (Math.random() < 0.05 ? 3 : 0) : 0,
+          liquid: random() < density.liquid ? 1 : 0,
           stableLevel: 0,
           movable: true,
           stable: false,
           checked: false,
+          tileNumber: 0,
+          tileType: 0
         };
+
+        if (grid[y][x].liquid) {
+          unstablePoints.push({ x, y });
+        }
       }
     }
+  }
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      grid[y][x].tileNumber = getTileNumber(grid, x, y);
+    }
+  }
+
+  return {
+    seed,
+    width,
+    height,
+    tileSize,
+    grid,
+    unstablePoints,
+    nextUnstablePoints: []
+  };
+}
+
+function getTileNumber(grid: Grid<Tile>, x: number, y: number): number {
+  const topLeft = y > 0 && x > 0 && grid[y - 1][x - 1].tileType === grid[y][x].tileType;
+  const top = y > 0 && grid[y - 1][x].tileType === grid[y][x].tileType;
+  const topRight = y > 0 && x < grid[0].length - 1 && grid[y - 1][x + 1].tileType === grid[y][x].tileType;
+  const left = x > 0 && grid[y][x - 1].tileType === grid[y][x].tileType;
+  const right = x < grid[0].length - 1 && grid[y][x + 1].tileType === grid[y][x].tileType;
+  const bottomLeft = y < grid.length - 1 && x > 0 && grid[y + 1][x - 1].tileType === grid[y][x].tileType;
+  const bottom = y < grid.length - 1 && grid[y + 1][x].tileType === grid[y][x].tileType;
+  const bottomRight = y < grid.length - 1 && x < grid[0].length - 1 && grid[y + 1][x + 1].tileType === grid[y][x + 1].tileType;
+
+  if (!top && !left && right && bottom) return 1;
+  if (!top && left && right && bottom && !bottomLeft && bottomRight) return 41;
+  if (!top && left && right && bottom && !bottomLeft && !bottomRight) return 42;
+  if (!top && left && right && bottom && bottomLeft && !bottomRight) return 43;
+  if (!top && left && right && bottom) return 2; // || 25
+  if (!top && left && !right && bottom) return 3;
+  if (top && left && right && bottom && topLeft && topRight && bottomLeft && !bottomRight) return 4;
+  if (top && left && right && !bottom && !topLeft && topRight) return 51;
+  if (top && left && right && !bottom && topLeft && !topRight) return 53;
+  if (top && left && right && !bottom && !topLeft && !topRight) return 52;
+  if (top && left && right && !bottom) return 5; // || 22
+  if (top && left && right && bottom && topLeft && topRight && !bottomLeft && bottomRight) return 6;
+  if (top && left && right && bottom && topLeft && topRight && bottomLeft && bottomRight) return 12; // || 12 || 20
+  if (top && !left && right && bottom && !topRight && bottomRight) return 36;
+  if (top && !left && right && bottom && !topRight && !bottomRight) return 37;
+  if (top && !left && right && bottom && topRight && !bottomRight) return 38;
+  if (top && !left && right && bottom) return 11;
+  if (top && left && !right && bottom && topLeft && !bottomLeft) return 44;
+  if (top && left && !right && bottom && !topLeft && !bottomLeft) return 45;
+  if (top && left && !right && bottom && !topLeft && bottomLeft) return 46;
+  if (top && left && !right && bottom) return 13;
+  if (top && left && right && bottom && !topLeft && topRight && !bottomLeft && bottomRight) return 17;
+  if (top && left && right && bottom && topLeft && topRight && !bottomLeft && !bottomRight) return 18;
+  if (top && left && right && bottom && !topLeft && topRight && bottomLeft && !bottomRight) return 19;
+  if (top && !left && right && !bottom) return 21;
+  if (top && left && !right && !bottom) return 23;
+  if (top && left && right && bottom && topLeft && !topRight && bottomLeft && bottomRight) return 24;
+  if (top && left && right && bottom && !topLeft && topRight && bottomLeft && bottomRight) return 57;
+  if (top && left && right && bottom && topLeft && !topRight && bottomLeft && !bottomRight) return 27;
+  if (top && left && right && bottom && !topLeft && !topRight && bottomLeft && bottomRight) return 28;
+  if (top && left && right && bottom && topLeft && !topRight && !bottomLeft && bottomRight) return 29;
+  if (!top && !left && right && !bottom) return 32;
+  if (!top && left && right && !bottom) return 33;
+  if (!top && left && !right && !bottom) return 34;
+  if (top && left && right && bottom && !topLeft && !topRight && !bottomLeft && !bottomRight) return 35;
+  if (!top && !left && !right && bottom) return 54;
+  if (top && !left && !right && bottom) return 55;
+  if (top && !left && !right && !bottom) return 56;
+
+  if (top && left && right && bottom && topLeft && !topRight && !bottomLeft && !bottomRight) return 35;
+  if (top && left && right && bottom && !topLeft && topRight && !bottomLeft && !bottomRight) return 35;
+  if (top && left && right && bottom && !topLeft && !topRight && bottomLeft && !bottomRight) return 35;
+  if (top && left && right && bottom && !topLeft && !topRight && !bottomLeft && bottomRight) return 35;
+
+  return 31;
+}
+
+// https://gamedevelopment.tutsplus.com/tutorials/generate-random-cave-levels-using-cellular-automata--gamedev-9664
+function countAliveNeighbours(grid: Grid<boolean>, x: number, y: number): number {
+  let count = 0;
+
+  for (let i = -1; i < 2; i++) {
+    for (let j = -1; j < 2; j++) {
+      let neighborX: number = x + i;
+      let neighborY: number = y + j;
+      if (i == 0 && j == 0) {
+      }
+      else if (neighborX < 0 || neighborY < 0 || neighborX >= grid[0].length || neighborY >= grid.length) {
+        count = count + 1;
+      }
+      else if (grid[neighborY][neighborX]) {
+        count = count + 1;
+      }
+    }
+  }
+
+  return count;
+}
+
+function createEmptyBoolGrid(width: number, height: number): Grid<boolean> {
+  let grid: Grid<boolean> = [];
+
+  for (let i = 0; i < height; i++) {
+    grid.push(new Array(width).fill(false));
   }
 
   return grid;
 }
 
-function getDefaultUnstablePoints(map: MapData): Array<Point> {
-  const unstablePoints: Array<Point> = [];
+function fillRandomGrid(grid: Grid<boolean>, seed: string, density: number): void {
+  const random = seedrandom(seed);
 
-  for (let y = 0; y < map.height; y++) {
-    for (let x = 0; x < map.width; x++) {
-      if (map.grid[y][x].liquid) unstablePoints.push({ x, y });
+  for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid[0].length; x++) {
+      grid[y][x] = random() < density;
+    }
+  }
+}
+
+function nextStep(grid: Grid<boolean>, options: { deathLimit: number, birthLimit: number }): void {
+  const afterGrid: Grid<boolean> = createEmptyBoolGrid(grid[0].length, grid.length);
+  const { deathLimit, birthLimit } = options;
+
+  for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid[0].length; x++) {
+      let alives: number = countAliveNeighbours(grid, x, y);
+
+      if (grid[y][x]) {
+        if (alives < deathLimit) {
+          afterGrid[y][x] = false;
+        }
+        else {
+          afterGrid[y][x] = true;
+        }
+      }
+      else {
+        if (alives > birthLimit) {
+          afterGrid[y][x] = true;
+        }
+        else {
+          afterGrid[y][x] = false;
+        }
+      }
     }
   }
 
-  return unstablePoints;
+  for (let y = 0; y < afterGrid.length; y++) {
+    for (let x = 0; x < afterGrid[0].length; x++) {
+      grid[y][x] = afterGrid[y][x]
+    }
+  }
 }
 
 function print(map: MapData, options?: { checkPoints: Array<{ position: Point, color: string, marker: string }> }): void {
@@ -89,6 +256,8 @@ function print(map: MapData, options?: { checkPoints: Array<{ position: Point, c
 
 export {
   generate,
-  getDefaultUnstablePoints,
+  createEmptyBoolGrid,
+  fillRandomGrid,
+  nextStep,
   print
 }

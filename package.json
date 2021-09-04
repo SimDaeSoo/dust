@@ -6,6 +6,7 @@
   "author": "daesoo94 <tlaeotn123@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "test-engine": "cd packages/@dust/core && yarn && yarn test",
     "set-engine": "yarn build-engine && yarn set-engine:client && yarn set-engine:server",
     "build-engine": "cd packages/@dust/core && yarn && yarn build && yarn link",
     "set-engine:client": "cd client && yarn link @dust/core",

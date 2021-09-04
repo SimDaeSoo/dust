@@ -13,6 +13,8 @@ type Tile = {
   movable: boolean,
   stable: boolean,
   checked: boolean,
+  tileType: number,
+  tileNumber: number,
 };
 type MapData = {
   seed: string,
