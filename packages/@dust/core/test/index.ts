@@ -19,7 +19,7 @@ function sleep(dt: number): Promise<void> {
 
 async function lightingTest(): Promise<void> {
   const seed: string = `${Math.random()}`;
-  const width: number = 180;
+  const width: number = 35;
   const height: number = 35;
   const tileSize: number = 4;
   const map: MapData = {
@@ -32,6 +32,8 @@ async function lightingTest(): Promise<void> {
     nextUnstablePoints: []
   };
   const position: Point = { x: 50, y: 50 };
+  map.grid[Math.floor(position.y / tileSize)][Math.floor(position.x / tileSize)].movable = true;
+
   const tiles = getLightingPolygon(position, map, 10, { getTiles: true });
   const polygon = getLightingPolygon(position, map, 10);
   print(map, { checkPoints: [{ position, color: '\x1b[31m', marker: '■' }] });
