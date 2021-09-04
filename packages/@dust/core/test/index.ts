@@ -1,12 +1,12 @@
 import { MapData, Point } from "../interfaces";
 import { getLightingPolygon } from "../modules/Lighting";
-import { print, generate } from "../modules/Map";
+import { print, generate, getDefaultUnstablePoints } from "../modules/Map";
 import { step } from '../modules/LiquidSimulator';
 
 async function main(): Promise<void> {
   await lightingTest();
-  await liquidTest();
-  await largeWorldLiquidSpeedTest();
+  // await liquidTest();
+  await hugeWorldLiquidTest();
 }
 
 function sleep(dt: number): Promise<void> {
@@ -19,7 +19,7 @@ function sleep(dt: number): Promise<void> {
 
 async function lightingTest(): Promise<void> {
   const seed: string = `${Math.random()}`;
-  const width: number = 186;
+  const width: number = 180;
   const height: number = 35;
   const tileSize: number = 4;
   const map: MapData = {
@@ -27,9 +27,11 @@ async function lightingTest(): Promise<void> {
     width,
     height,
     tileSize,
-    grid: generate(width, height, seed, { density: 0.3, initLiquid: false })
+    grid: generate(width, height, seed, { density: 0.3, initLiquid: false }),
+    unstablePoints: [],
+    nextUnstablePoints: []
   };
-  const position: Point = { x: 198, y: 58 };
+  const position: Point = { x: 50, y: 50 };
   const tiles = getLightingPolygon(position, map, 10, { getTiles: true });
   const polygon = getLightingPolygon(position, map, 10);
   print(map, { checkPoints: [{ position, color: '\x1b[31m', marker: '■' }] });
@@ -54,27 +56,48 @@ async function lightingTest(): Promise<void> {
 
 async function liquidTest(): Promise<void> {
   const seed: string = `${Math.random()}`;
-  const width: number = 186;
-  const height: number = 60;
+  const width: number = 35;
+  const height: number = 35;
   const tileSize: number = 4;
   const map: MapData = {
     seed,
     width,
     height,
     tileSize,
-    grid: generate(width, height, seed, { density: 0.3, initLiquid: true })
+    grid: generate(width, height, seed, { density: 0.3, initLiquid: true }),
+    unstablePoints: [],
+    nextUnstablePoints: []
   };
   console.clear();
   print(map);
+  const unstables: Array<Point> = getDefaultUnstablePoints(map);
 
-  for (let i = 0; i < 300; i++) {
+  for (const point of unstables) {
+    map.unstablePoints.push(point);
+  }
+  console.log('After 5 seconds the next test starts');
+  await sleep(5000);
+
+  let options = { currentPartition: 0, maximum: 40000, processOrder: 0 };
+  let average = 0;
+  let stepCount = 0;
+  let max = 0;
+  while (map.unstablePoints.length) {
     const lastDt = Date.now();
-    step(map);
+    options = step(map, options);
     const dt = Date.now() - lastDt;
+    max = max < dt ? dt : max;
+    average += dt;
+    stepCount++;
     console.clear();
     print(map);
+    console.log('step: ', stepCount);
+    console.log('unstable liquid:', map.unstablePoints.length);
     console.log('processing per ms:', dt, 'ms');
-    await sleep(64);
+    console.log('processing average per ms:', (average / stepCount).toFixed(2), 'ms');
+    console.log('processing max ms:', max, 'ms');
+    console.log(options);
+    await sleep(100);
   }
 
   console.log('Liquid Step Test Done...');
@@ -82,44 +105,47 @@ async function liquidTest(): Promise<void> {
   await sleep(5000);
 }
 
-async function largeWorldLiquidSpeedTest() {
+async function hugeWorldLiquidTest(): Promise<void> {
   const seed: string = `${Math.random()}`;
-  const width: number = 2400;
-  const height: number = 800;
-  const tileSize: number = 1;
+  const width: number = 300;
+  const height: number = 300;
+  const tileSize: number = 4;
   const map: MapData = {
     seed,
     width,
     height,
     tileSize,
     grid: generate(width, height, seed, { density: 0.3, initLiquid: true }),
+    unstablePoints: [],
+    nextUnstablePoints: []
   };
   console.clear();
+  const unstables: Array<Point> = getDefaultUnstablePoints(map);
 
-  for (let j = 1; j <= 20; j++) {
-    const maximum = j * 10000;
-    let average = 0;
-    let options: any = { currentPartition: 0, maximum, flow: 0 };
-    for (let i = 0; i <= width * height / maximum * 2 + 1; i++) {
-      const lastDt = Date.now();
-      options = step(map, options);
-      const dt = Date.now() - lastDt;
-      average += dt;
-      console.log(dt);
-    }
-    console.log(`width: ${width}`);
-    console.log(`height: ${height}`);
-    console.log(`grid: ${width * height} tiles`);
-    console.log(`partition grid: ${maximum} tiles`);
-    console.log('average', (average / 50).toFixed(2), 'ms');
-    console.log(`liquid processing per frame: ${(width * height / maximum).toFixed(2)}`);
-    console.log(`liquid processing per ms: ${(width * height / maximum * 16.6666).toFixed(2)} ms\n`);
-    await sleep(5000);
-    console.log('-------------------------------------');
+  for (const point of unstables) {
+    map.unstablePoints.push(point);
   }
 
-  console.log('\n')
-  console.log('Large World Liquid Performance Test Done...');
+  let options = { currentPartition: 0, maximum: 40000, processOrder: 0 };
+  let average = 0;
+  let stepCount = 0;
+  let max = 0;
+  while (map.unstablePoints.length) {
+    const lastDt = Date.now();
+    options = step(map, options);
+    const dt = Date.now() - lastDt;
+    max = max < dt ? dt : max;
+    average += dt;
+    stepCount++;
+    console.clear();
+    console.log('step: ', stepCount);
+    console.log('unstable liquid:', map.unstablePoints.length);
+    console.log('processing per ms:', dt, 'ms');
+    console.log('processing average per ms:', (average / stepCount).toFixed(2), 'ms');
+    console.log('processing max ms:', max, 'ms');
+  }
+
+  console.log('Huge World Liquid Step Test Done...');
   await sleep(5000);
 }
 

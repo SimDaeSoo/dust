@@ -19,43 +19,20 @@ function calculateVerticalFlowValue(remainingLiquid: number, destination: Tile):
   }
 }
 
-function step(map: MapData, options: { currentPartition: number, maximum: number, flow: number } = { currentPartition: 0, maximum: map.height * map.width, flow: 0 }): { currentPartition: number, maximum: number, flow: number } {
-  let { currentPartition, maximum, flow } = options;
+function step(map: MapData, options: { currentPartition: number, maximum: number, processOrder: number } = { currentPartition: 0, maximum: map.height * map.width, processOrder: 0 }): { currentPartition: number, maximum: number, processOrder: number } {
+  let { currentPartition, maximum, processOrder } = options;
   let accumulation = 0;
+  let flow = 0;
 
-  if (currentPartition === 0) {
-    for (let y = 0; y < map.height; y++) {
-      for (let x = 0; x < map.width; x++) {
-        map.grid[y][x].diff = 0;
-      }
-    }
-  }
-  const baseX = Math.floor(currentPartition / map.height) % map.width;
-  let baseY = currentPartition % map.height;
-
-  for (let x = baseX; x < map.width; x++) {
-    if (accumulation >= maximum) break;
-    for (let y = baseY; y < map.height; y++) {
-      if (accumulation >= maximum) break;
+  if (processOrder === 0) {
+    for (let i = currentPartition; i < map.unstablePoints.length; i++) {
+      if (accumulation >= maximum) return { currentPartition, maximum, processOrder: 0 };
+      const { x, y } = map.unstablePoints[i];
       const cell = map.grid[y][x];
+      let remainingValue = cell.liquid;
 
       currentPartition++;
       accumulation++;
-
-      if (!cell.movable) {
-        cell.liquid = 0;
-        continue;
-      }
-      if (cell.liquid == 0) continue;
-      if (cell.settled) continue;
-      if (cell.liquid < MIN_LIQUID_VALUE) {
-        cell.liquid = 0;
-        continue;
-      }
-
-      let startValue = cell.liquid;
-      let remainingValue = cell.liquid;
-      flow = 0;
 
       if (y < map.height - 1 && map.grid[y + 1][x].movable) {
         flow = calculateVerticalFlowValue(cell.liquid, map.grid[y + 1][x]) - map.grid[y + 1][x].liquid;
@@ -70,14 +47,9 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
           remainingValue -= flow;
           cell.diff -= flow;
           map.grid[y + 1][x].diff += flow;
-          map.grid[y + 1][x].settled = false;
         }
       }
-
-      if (remainingValue < MIN_LIQUID_VALUE) {
-        cell.diff -= remainingValue;
-        continue;
-      }
+      if (remainingValue < MIN_LIQUID_VALUE) cell.diff -= remainingValue;
 
       if (x > 0 && map.grid[y][x - 1].movable) {
         flow = (remainingValue - map.grid[y][x - 1].liquid) / 4;
@@ -93,14 +65,9 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
           remainingValue -= flow;
           cell.diff -= flow;
           map.grid[y][x - 1].diff += flow;
-          map.grid[y][x - 1].settled = false;
         }
       }
-
-      if (remainingValue < MIN_LIQUID_VALUE) {
-        cell.diff -= remainingValue;
-        continue;
-      }
+      if (remainingValue < MIN_LIQUID_VALUE) cell.diff -= remainingValue;
 
       if (x < map.width - 1 && map.grid[y][x + 1].movable) {
         flow = (remainingValue - map.grid[y][x + 1].liquid) / 3;
@@ -115,14 +82,9 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
           remainingValue -= flow;
           cell.diff -= flow;
           map.grid[y][x + 1].diff += flow;
-          map.grid[y][x + 1].settled = false;
         }
       }
-
-      if (remainingValue < MIN_LIQUID_VALUE) {
-        cell.diff -= remainingValue;
-        continue;
-      }
+      if (remainingValue < MIN_LIQUID_VALUE) cell.diff -= remainingValue;
 
       if (y > 0 && map.grid[y - 1][x].movable) {
         flow = remainingValue - calculateVerticalFlowValue(remainingValue, map.grid[y - 1][x]);
@@ -137,42 +99,89 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
           remainingValue -= flow;
           cell.diff -= flow;
           map.grid[y - 1][x].diff += flow;
-          map.grid[y - 1][x].settled = false;
         }
       }
-
-      if (remainingValue < MIN_LIQUID_VALUE) {
-        cell.diff -= remainingValue;
-        continue;
-      }
-
-      if (startValue == remainingValue) {
-        cell.settleCount++;
-        if (cell.settleCount >= 10) cell.settled = true;
-      } else {
-        if (y > 0 && map.grid[y - 1][x]) map.grid[y - 1][x].settled = false;
-        if (y < map.height - 1 && map.grid[y + 1][x]) map.grid[y + 1][x].settled = false;
-        if (x > 0 && map.grid[y][x - 1]) map.grid[y][x - 1].settled = false;
-        if (x < map.width - 1 && map.grid[y][x + 1]) map.grid[y][x + 1].settled = false;
-      }
     }
-
-    baseY = 0;
   }
 
-  if (currentPartition >= map.width * map.height) {
-    for (let x = 0; x < map.width; x++) {
-      for (let y = 0; y < map.height; y++) {
-        map.grid[y][x].liquid += map.grid[y][x].diff;
-        if (map.grid[y][x].liquid < MIN_LIQUID_VALUE) {
-          map.grid[y][x].liquid = 0;
-          map.grid[y][x].settled = false;
+  if (processOrder === 0 && currentPartition >= map.unstablePoints.length - 1) {
+    processOrder = 1;
+    currentPartition = 0;
+  }
+
+  if (processOrder === 1) {
+    for (let i = currentPartition; i < map.unstablePoints.length; i++) {
+      if (accumulation >= maximum) return { currentPartition, maximum, processOrder: 1 };
+      const { x, y } = map.unstablePoints[i];
+      currentPartition++;
+      accumulation++;
+      map.grid[y][x].liquid += map.grid[y][x].diff;
+
+      if (map.grid[y][x].liquid < MIN_LIQUID_VALUE) {
+        map.grid[y][x].liquid = 0;
+        map.grid[y][x].stableLevel = 0;
+      }
+
+      if (Math.abs(map.grid[y][x].diff) <= 0.0005) {
+        if (map.grid[y][x].stableLevel++ >= 10) {
+          map.grid[y][x].stableLevel = 0;
+          map.grid[y][x].stable = true;
+        } else if (map.grid[y][x].liquid && !map.grid[y][x].checked) {
+          map.grid[y][x].checked = true;
+          map.grid[y][x].stable = false;
+          map.nextUnstablePoints.push({ x, y });
+        }
+      } else {
+        map.grid[y][x].stableLevel = 0;
+        if (map.grid[y][x].liquid && !map.grid[y][x].checked) {
+          map.grid[y][x].checked = true;
+          map.grid[y][x].stable = false;
+          map.nextUnstablePoints.push({ x, y });
+        }
+        if (y > 0 && map.grid[y - 1][x].movable && !map.grid[y - 1][x].checked) {
+          map.grid[y - 1][x].checked = true;
+          map.grid[y - 1][x].stable = false;
+          map.nextUnstablePoints.push({ x, y: y - 1 });
+        }
+        if (y < map.height - 1 && map.grid[y + 1][x].movable && !map.grid[y + 1][x].checked) {
+          map.grid[y + 1][x].checked = true;
+          map.grid[y + 1][x].stable = false;
+          map.nextUnstablePoints.push({ x, y: y + 1 });
+        }
+        if (x > 0 && map.grid[y][x - 1].movable && !map.grid[y][x - 1].checked) {
+          map.grid[y][x - 1].checked = true;
+          map.grid[y][x - 1].stable = false;
+          map.nextUnstablePoints.push({ x: x - 1, y });
+        }
+        if (x < map.width - 1 && map.grid[y][x + 1].movable && !map.grid[y][x + 1].checked) {
+          map.grid[y][x + 1].checked = true;
+          map.grid[y][x + 1].stable = false;
+          map.nextUnstablePoints.push({ x: x + 1, y });
         }
       }
+
+      map.grid[y][x].diff = 0;
     }
-    return { currentPartition: 0, maximum, flow: 0 };
+
+    processOrder = 2;
+    currentPartition = 0;
+  }
+
+  if (processOrder === 2) {
+    for (let i = currentPartition; i < map.nextUnstablePoints.length; i++) {
+      if (accumulation >= maximum) return { currentPartition, maximum, processOrder: 2 };
+      const { x, y } = map.nextUnstablePoints[i];
+      currentPartition++;
+      accumulation++;
+      map.grid[y][x].checked = false;
+    }
+
+    map.unstablePoints = map.nextUnstablePoints;
+    map.nextUnstablePoints = [];
+
+    return { currentPartition: 0, maximum, processOrder: 0 };
   } else {
-    return { currentPartition, maximum, flow };
+    return { currentPartition, maximum, processOrder };
   }
 }
 

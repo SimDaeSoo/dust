@@ -9,16 +9,19 @@ type Dictionary<T> = { [key: string]: T };
 type Tile = {
   diff: number,
   liquid: number,
-  settled: boolean,
-  settleCount: number,
-  movable: boolean
+  stableLevel: number,
+  movable: boolean,
+  stable: boolean,
+  checked: boolean,
 };
 type MapData = {
   seed: string,
   tileSize: number,
   width: number,
   height: number,
-  grid: Grid<Tile>
+  grid: Grid<Tile>,
+  unstablePoints: Array<Point>,
+  nextUnstablePoints: Array<Point>,
 }
 type CollisionDirectionLine = {
   dt: number,

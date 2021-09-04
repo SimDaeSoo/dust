@@ -13,23 +13,37 @@ function generate(width: number, height: number, seed: string, options: { densit
         grid[y][x] = {
           diff: 0,
           liquid: 0,
-          settled: false,
-          settleCount: 0,
-          movable: false
+          stableLevel: 0,
+          movable: false,
+          stable: false,
+          checked: false,
         };
       } else {
         grid[y][x] = {
           diff: 0,
           liquid: options.initLiquid ? (Math.random() < 0.1 ? 3 : 0) : 0,
-          settled: false,
-          settleCount: 0,
-          movable: true
+          stableLevel: 0,
+          movable: true,
+          stable: false,
+          checked: false,
         };
       }
     }
   }
 
   return grid;
+}
+
+function getDefaultUnstablePoints(map: MapData): Array<Point> {
+  const unstablePoints: Array<Point> = [];
+
+  for (let y = 0; y < map.height; y++) {
+    for (let x = 0; x < map.width; x++) {
+      if (map.grid[y][x].liquid) unstablePoints.push({ x, y });
+    }
+  }
+
+  return unstablePoints;
 }
 
 function print(map: MapData, options?: { checkPoints: Array<{ position: Point, color: string, marker: string }> }): void {
@@ -42,9 +56,17 @@ function print(map: MapData, options?: { checkPoints: Array<{ position: Point, c
       if (!map.grid[y][x].movable) {
         tileStrings[y].push('■');
       } else if (map.grid[y][x].liquid > 0.5 || (y > 0 && map.grid[y - 1][x].liquid > 0)) {
-        tileStrings[y].push('\x1b[34m■\x1b[0m');
+        if (map.grid[y][x].stable) {
+          tileStrings[y].push('\x1b[31m■\x1b[0m');
+        } else {
+          tileStrings[y].push('\x1b[34m■\x1b[0m');
+        }
       } else if (map.grid[y][x].liquid > 0) {
-        tileStrings[y].push('\x1b[34m_\x1b[0m');
+        if (map.grid[y][x].stable) {
+          tileStrings[y].push('\x1b[31m_\x1b[0m');
+        } else {
+          tileStrings[y].push('\x1b[34m_\x1b[0m');
+        }
       } else {
         tileStrings[y].push(' ');
       }
@@ -53,7 +75,7 @@ function print(map: MapData, options?: { checkPoints: Array<{ position: Point, c
 
   const checkPoints = options?.checkPoints || [];
   for (let checkPoint of checkPoints) {
-    if (map.grid[Math.floor(checkPoint.position.y / map.tileSize)][Math.floor(checkPoint.position.x / map.tileSize)].movable) {
+    if (map.grid[Math.floor(checkPoint.position.y / map.tileSize)][Math.floor(checkPoint.position.x / map.tileSize)].movable && !map.grid[Math.floor(checkPoint.position.y / map.tileSize)][Math.floor(checkPoint.position.x / map.tileSize)].liquid) {
       tileStrings[Math.floor(checkPoint.position.y / map.tileSize)][Math.floor(checkPoint.position.x / map.tileSize)] = `${checkPoint.color}${checkPoint.marker}\x1b[0m`;
     } else {
       tileStrings[Math.floor(checkPoint.position.y / map.tileSize)][Math.floor(checkPoint.position.x / map.tileSize)] = `\x1b[32m■\x1b[0m`;
@@ -67,5 +89,6 @@ function print(map: MapData, options?: { checkPoints: Array<{ position: Point, c
 
 export {
   generate,
+  getDefaultUnstablePoints,
   print
 }
