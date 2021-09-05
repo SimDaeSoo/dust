@@ -63,13 +63,26 @@ async function main(): Promise<void> {
   await preload();
 
   const riquidStepOptions: { currentPartition: number, maximum: number, processOrder: number } = { currentPartition: 0, maximum: 40000, processOrder: 0 };
-  const map: MapData = Map.generate(80, 46, 32, `${Math.random()}`, {
+  // Huge World - 8400*2400 - density 0.0005
+  // const map: MapData = Map.generate(8400, 2400, 32, `${Math.random()}`, {
+  //   step: 4,
+  //   clearTop: 3,
+  //   tileTypes: [4],
+  //   density: {
+  //     block: 0.3,
+  //     liquid: 0.0005
+  //   },
+  //   birthLimit: 3,
+  //   deathLimit: 2
+  // });
+  // Small World
+  const map: MapData = Map.generate(80, 45, 32, `${Math.random()}`, {
     step: 4,
     clearTop: 3,
     tileTypes: [4],
     density: {
       block: 0.3,
-      liquid: 0.3
+      liquid: 0.5
     },
     birthLimit: 3,
     deathLimit: 2
@@ -86,7 +99,6 @@ async function main(): Promise<void> {
   // Graphics
   const maskGraphic = new PIXI.Graphics();
   const lightGraphic = new PIXI.Graphics();
-  const verticiesGraphic = new PIXI.Graphics();
 
   // Lighting
   const lighting = new PIXI_LAYERS.Layer();
@@ -104,7 +116,6 @@ async function main(): Promise<void> {
   lightingSprite.blendMode = PIXI.BLEND_MODES.MULTIPLY;
 
   stage.addChild(lightGraphic);
-  stage.addChild(verticiesGraphic);
   stage.addChild(maskGraphic);
   app.stage.addChild(stage);
   app.stage.addChild(lighting);
@@ -114,7 +125,7 @@ async function main(): Promise<void> {
   const characters: Array<{ container: PIXI.Container, vector: Vector, sprite: PIXI.Sprite }> = [];
   const characterSize = 8;
 
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 1; i++) {
     const container = new PIXI.Container();
     const sprite = new PIXI.Sprite(texture);
     sprite.width = characterSize;
@@ -138,17 +149,15 @@ async function main(): Promise<void> {
     }
   }
 
-  let envFrame = 0;
+  let liquidEnvFrame = 0;
+  let lightEnvFrame = 0;
   const render = () => {
-    envFrame++;
-    const isLightingFrame = envFrame % 2 === 0;
-    const isLiquidFrame = !isLightingFrame;
+    const isLightingFrame = (++lightEnvFrame % 6) === 0;
+    const isLiquidFrame = (++liquidEnvFrame % 2) === 0;
 
     if (isLightingFrame) {
-      envFrame = 0;
       maskGraphic.clear();
       lightGraphic.clear();
-      verticiesGraphic.clear();
     }
 
     for (const { container, vector, sprite } of characters) {
@@ -185,7 +194,7 @@ async function main(): Promise<void> {
       if (!collisionDirection.y) container.y += vector.y;
 
       if (isLightingFrame) {
-        const LIGHT_LENGTH = 6;
+        const LIGHT_LENGTH = 5;
         const isInViewPort: boolean =
           container.x - (map.tileSize * LIGHT_LENGTH) <= viewport.x + viewport.w &&
           container.y - (map.tileSize * LIGHT_LENGTH) <= viewport.y + viewport.h &&
@@ -214,12 +223,11 @@ async function main(): Promise<void> {
     if (isLightingFrame) {
       viewport.x = targetContainer.x - Math.floor(viewport.w / 2);
       viewport.y = targetContainer.y - Math.floor(viewport.h / 2);
-      // verticiesGraphic.lineStyle({ width: 2, color: 0x0000FF });
-      // verticiesGraphic.drawRect(viewport.x, viewport.y, viewport.w, viewport.h);
-      // verticiesGraphic.endFill();
+      lightEnvFrame = 0;
     }
     if (isLiquidFrame) {
       LiquidSimulator.step(map, riquidStepOptions);
+      liquidEnvFrame = 0;
     }
     tilemap.update();
     stage.x = 640 - targetContainer.x;
