@@ -3,7 +3,7 @@ import { getLightingPolygon } from "../modules/Lighting";
 import { print, generate } from "../modules/Map";
 
 async function lightingTest(): Promise<void> {
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 3; i++) {
     const map: MapData = generate(50, 35, 4, `${Math.random()}`, {
       step: 3,
       density: {

@@ -3,7 +3,7 @@ import { print, createEmptyBoolGrid, fillRandomGrid, nextStep } from "../modules
 import * as seedrandom from 'seedrandom';
 
 async function mapGenrateTest(): Promise<void> {
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 3; i++) {
     const seed = `${Math.random()}`;
     const width = 50;
     const height = 35;

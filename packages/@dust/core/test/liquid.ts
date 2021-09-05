@@ -3,7 +3,7 @@ import { print, generate } from "../modules/Map";
 import { step } from '../modules/LiquidSimulator';
 
 async function fullLiquidTest(): Promise<void> {
-  const map: MapData = generate(50, 50, 4, `${Math.random()}`, {
+  const map: MapData = generate(50, 35, 4, `${Math.random()}`, {
     step: 3,
     clearTop: 50,
     density: {

@@ -56,7 +56,7 @@ class Tilemap {
             if (this.map.grid[position.y][position.x].liquid) {
               const waterLevel = Math.floor(33 - Math.min(this.map.grid[position.y][position.x].liquid, 1) * 33);
               const tileNumber = waterLevel.toString().padStart(2, '0');
-              this.tiles[y][x].alpha = 0.5 + Math.min(this.map.grid[position.y][position.x].liquid / 5, 1) * 0.4;
+              this.tiles[y][x].alpha = Math.min(0.4 + this.map.grid[position.y][position.x].liquid * 0.15, 0.8);
 
               if (
                 position.y < this.map.height - 1 &&
@@ -65,28 +65,29 @@ class Tilemap {
                 position.x > 0 &&
                 !this.map.grid[position.y - 1][position.x].liquid &&
                 this.map.grid[position.y + 1][position.x].liquid &&
-                this.map.grid[position.y + 1][position.x].liquid < 1 &&
                 (
                   (
                     this.map.grid[position.y][position.x - 1].liquid &&
                     this.map.grid[position.y - 1][position.x - 1].liquid &&
                     this.map.grid[position.y][position.x - 1].liquid < 1 &&
-                    this.map.grid[position.y - 1][position.x - 1].liquid < 1
+                    this.map.grid[position.y - 1][position.x - 1].liquid < 1 &&
+                    this.map.grid[position.y + 1][position.x + 1].liquid < 1
                   )
                   ||
                   (
                     this.map.grid[position.y][position.x + 1].liquid &&
                     this.map.grid[position.y - 1][position.x + 1].liquid &&
                     this.map.grid[position.y][position.x + 1].liquid < 1 &&
-                    this.map.grid[position.y - 1][position.x + 1].liquid < 1
+                    this.map.grid[position.y - 1][position.x + 1].liquid < 1 &&
+                    this.map.grid[position.y + 1][position.x - 1].liquid < 1
                   )
                 )
               ) {
-                if (this.map.grid[position.y][position.x - 1].liquid && this.map.grid[position.y][position.x + 1].liquid) {
-                  this.tiles[y][x].texture = PIXI.Texture.from(`../static/assets/tiles/water/02.png`);
-                } else if (this.map.grid[position.y][position.x - 1].liquid) {
+                if (this.map.grid[position.y - 1][position.x - 1].liquid && this.map.grid[position.y - 1][position.x + 1].liquid) {
+                  this.tiles[y][x].texture = PIXI.Texture.from(`../static/assets/tiles/water/36.png`);
+                } else if (this.map.grid[position.y - 1][position.x - 1].liquid) {
                   this.tiles[y][x].texture = PIXI.Texture.from(`../static/assets/tiles/water/35.png`);
-                } else {
+                } else if (this.map.grid[position.y - 1][position.x + 1].liquid) {
                   this.tiles[y][x].texture = PIXI.Texture.from(`../static/assets/tiles/water/34.png`);
                 }
               } else if (waterLevel <= 1 && (position.y === 0 || (this.map.grid[position.y - 1][position.x].movable && !this.map.grid[position.y - 1][position.x].liquid))) {

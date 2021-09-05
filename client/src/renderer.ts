@@ -17,7 +17,7 @@ async function preload(): Promise<void> {
     }
   }
 
-  for (let i = 0; i < 36; i++) {
+  for (let i = 0; i < 37; i++) {
     const src = `../static/assets/tiles/water/${i.toString().padStart(2, '0')}.png`;
     srcs.push(src);
   }
@@ -86,8 +86,8 @@ async function main(): Promise<void> {
   const verticiesGraphic = new PIXI.Graphics();
 
   // Test Light Filters
-  app.stage.filters = [new AdvancedBloomFilter({ quality: 8 })];
-  lightGraphic.filters = [new OutlineFilter(Math.floor(map.tileSize / 2), 0xFFFFFF, 0.5)];
+  // app.stage.filters = [new AdvancedBloomFilter({ quality: 8 })];
+  // lightGraphic.filters = [new OutlineFilter(Math.floor(map.tileSize / 2), 0xFFFFFF, 0.5)];
 
   app.stage.addChild(lightGraphic);
   app.stage.addChild(verticiesGraphic);
@@ -166,12 +166,14 @@ async function main(): Promise<void> {
       if (!collisionDirection.y) container.y += vector.y;
 
       if (isLightingFrame) {
-        const LIGHT_LENGTH = 6;
+        const currentTile = map.grid[Math.floor(container.y / map.tileSize)][Math.floor(container.x / map.tileSize)];
+        const LIGHT_LENGTH = Math.max(2, 6 - Math.floor(currentTile.liquid * 2));
         const isInViewPort: boolean =
           container.x - (map.tileSize * LIGHT_LENGTH) <= viewport.x + viewport.w &&
           container.y - (map.tileSize * LIGHT_LENGTH) <= viewport.y + viewport.h &&
           container.x + characterSize + (map.tileSize * LIGHT_LENGTH) >= viewport.x &&
           container.y + characterSize + (map.tileSize * LIGHT_LENGTH) >= viewport.y;
+
 
         if (isInViewPort) {
           sprite.tint = 0xFF00FF;
@@ -180,12 +182,12 @@ async function main(): Promise<void> {
           lightGraphic.drawPolygon(polygon as Array<PIXI.Point>);
           lightGraphic.endFill();
 
-          // const size = 4;
-          // verticiesGraphic.beginFill(0xFF0000);
-          // for (const point of polygon) {
-          //   verticiesGraphic.drawRect(point.x - size / 2, point.y - size / 2, size, size);
-          // }
-          // verticiesGraphic.endFill();
+          const size = 4;
+          verticiesGraphic.beginFill(0xAA0000);
+          for (const point of polygon) {
+            verticiesGraphic.drawRect(point.x - size / 2, point.y - size / 2, size, size);
+          }
+          verticiesGraphic.endFill();
         } else {
           sprite.tint = 0xFF0000;
         }
