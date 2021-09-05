@@ -82,7 +82,7 @@ async function main(): Promise<void> {
     tileTypes: [4],
     density: {
       block: 0.3,
-      liquid: 0.5
+      liquid: 0
     },
     birthLimit: 3,
     deathLimit: 2
@@ -194,7 +194,7 @@ async function main(): Promise<void> {
       if (!collisionDirection.y) container.y += vector.y;
 
       if (isLightingFrame) {
-        const LIGHT_LENGTH = 5;
+        const LIGHT_LENGTH = 6;
         const isInViewPort: boolean =
           container.x - (map.tileSize * LIGHT_LENGTH) <= viewport.x + viewport.w &&
           container.y - (map.tileSize * LIGHT_LENGTH) <= viewport.y + viewport.h &&
@@ -206,7 +206,7 @@ async function main(): Promise<void> {
           sprite.tint = 0xFF00FF;
           const polygon = Lighting.getLightingPolygon({ x: container.x + characterSize / 2, y: container.y + characterSize / 2 }, map, LIGHT_LENGTH);
 
-          lightGraphic.beginFill(0xFFFFFF, 0.5);
+          lightGraphic.beginFill(0xFFFFFF, 0.3);
           lightGraphic.drawCircle(container.x + characterSize / 2, container.y + characterSize / 2, LIGHT_LENGTH * map.tileSize);
           lightGraphic.endFill();
 

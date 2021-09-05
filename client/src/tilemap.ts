@@ -98,7 +98,8 @@ class Tilemap {
                 this.tiles[y][x].texture = PIXI.Texture.from(`../static/assets/tiles/water/${tileNumber}.png`);
               }
             } else {
-              this.tiles[y][x].texture = PIXI.Texture.EMPTY;
+              this.tiles[y][x].texture = PIXI.Texture.from(`../static/assets/tiles/mine/Tile_10.png`); // TEST
+              // this.tiles[y][x].texture = PIXI.Texture.EMPTY;
             }
           } else {
             this.tiles[y][x].texture = PIXI.Texture.from(`../static/assets/tiles/${TILEMAP_DATA[this.map.grid[position.y][position.x].tileType - 1]}/Tile_${this.map.grid[position.y][position.x].tileNumber.toString().padStart(2, '0')}.png`);
