@@ -17,7 +17,9 @@ const createWindow = () => {
     });
 
     mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
-    mainWindow.webContents.openDevTools();
+    if (process.env.NODE_ENV !== 'production') {
+      mainWindow.webContents.openDevTools();
+    }
   }
 };
 

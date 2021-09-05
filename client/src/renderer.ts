@@ -45,7 +45,7 @@ async function main(): Promise<void> {
   const app = new PIXI.Application({
     width: window.innerWidth,
     height: window.innerHeight,
-    backgroundColor: 0x000000,
+    backgroundColor: 0x444444,
     sharedLoader: true,
     powerPreference: 'high-performance',
     autoStart: false,
@@ -62,7 +62,7 @@ async function main(): Promise<void> {
   await preload();
 
   const riquidStepOptions: { currentPartition: number, maximum: number, processOrder: number } = { currentPartition: 0, maximum: 40000, processOrder: 0 };
-  const map: MapData = Map.generate(40, 23, 32, `${Math.random()}`, {
+  const map: MapData = Map.generate(80, 46, 32, `${Math.random()}`, {
     step: 4,
     clearTop: 3,
     tileTypes: [4],
