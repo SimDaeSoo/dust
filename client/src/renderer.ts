@@ -55,7 +55,7 @@ async function main(): Promise<void> {
     resolution,
   });
   app.stage = new PIXI_LAYERS.Stage();
-  app.stage.filters = [new AdvancedBloomFilter({ threshold: 0.1, quality: 8 })];
+  app.stage.filters = [new AdvancedBloomFilter({ threshold: 0.4, blur: 4, pixelSize: 1, quality: 4 })];
   app.view.style.width = '100%';
   app.view.style.height = '100%';
   document.body.appendChild(app.view);
@@ -82,7 +82,7 @@ async function main(): Promise<void> {
     tileTypes: [4],
     density: {
       block: 0.3,
-      liquid: 0
+      liquid: 0.5
     },
     birthLimit: 3,
     deathLimit: 2
@@ -94,7 +94,6 @@ async function main(): Promise<void> {
   const margin = 2;
   const tilemap = new Tilemap(map, viewport, { margin });
   let targetContainer: any;
-  stage.addChild(tilemap.container);
 
   // Graphics
   const maskGraphic = new PIXI.Graphics();
@@ -106,7 +105,7 @@ async function main(): Promise<void> {
     element.blendMode = PIXI.BLEND_MODES.ADD;
   });
   lighting.useRenderTexture = true;
-  lighting.clearColor = [0.1, 0.1, 0.1, 1]; // ambient gray
+  lighting.clearColor = [0.1, 0.1, 0.1, 1];
   lightGraphic.blendMode = PIXI.BLEND_MODES.MULTIPLY;
   lightGraphic.filters = [new OutlineFilter(Math.floor(map.tileSize / 2), 0xFFFFFF, 0.5), new PIXI.filters.BlurFilter(16)];
   lightGraphic.mask = maskGraphic;
@@ -115,6 +114,7 @@ async function main(): Promise<void> {
   const lightingSprite = new PIXI.Sprite(lighting.getRenderTexture());
   lightingSprite.blendMode = PIXI.BLEND_MODES.MULTIPLY;
 
+  stage.addChild(tilemap.container);
   stage.addChild(lightGraphic);
   stage.addChild(maskGraphic);
   app.stage.addChild(stage);
@@ -125,7 +125,7 @@ async function main(): Promise<void> {
   const characters: Array<{ container: PIXI.Container, vector: Vector, sprite: PIXI.Sprite }> = [];
   const characterSize = 8;
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 10; i++) {
     const container = new PIXI.Container();
     const sprite = new PIXI.Sprite(texture);
     sprite.width = characterSize;
@@ -230,8 +230,8 @@ async function main(): Promise<void> {
       liquidEnvFrame = 0;
     }
     tilemap.update();
-    stage.x = 640 - targetContainer.x;
-    stage.y = 360 - targetContainer.y;
+    stage.x = Math.round(640 - targetContainer.x);
+    stage.y = Math.round(360 - targetContainer.y);
     app.render();
     stats.update();
     window.requestAnimationFrame(render);

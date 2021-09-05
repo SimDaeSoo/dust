@@ -7,14 +7,17 @@ type Boundary<T> = { min: T, max: T };
 type Square = { x: number, y: number, w: number, h: number };
 type Dictionary<T> = { [key: string]: T };
 type Tile = {
-  diff: number,
-  liquid: number,
-  stableLevel: number,
-  movable: boolean,
-  stable: boolean,
-  checked: boolean,
   tileType: number,
   tileNumber: number,
+  backgroundTileType: number,
+  backgroundTileNumber: number,
+  lightLevel: number,
+  movable: boolean,
+  liquid: number,
+  diff: number,
+  stable: boolean,
+  stableLevel: number,
+  checked: boolean,
 };
 type MapData = {
   seed: string,

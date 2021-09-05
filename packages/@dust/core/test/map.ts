@@ -62,6 +62,9 @@ async function mapGenrateTest(): Promise<void> {
             checked: false,
             tileType: 1,
             tileNumber: 0,
+            backgroundTileType: 0,
+            backgroundTileNumber: 0,
+            lightLevel: 0
           };
         } else {
           grid[y][x] = {
@@ -73,6 +76,9 @@ async function mapGenrateTest(): Promise<void> {
             checked: false,
             tileType: 0,
             tileNumber: 0,
+            backgroundTileType: 0,
+            backgroundTileNumber: 0,
+            lightLevel: 0
           };
         }
       }
