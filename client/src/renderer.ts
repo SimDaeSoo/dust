@@ -91,7 +91,7 @@ async function main(): Promise<void> {
   const stage = new PIXI.Container();
   const texture = PIXI.Texture.WHITE;
   const viewport: Square = { x: 64, y: 64, w: 1280, h: 720 };
-  const margin = 2;
+  const margin = 4;
   const tilemap = new Tilemap(map, viewport, { margin });
   let targetContainer: any;
 

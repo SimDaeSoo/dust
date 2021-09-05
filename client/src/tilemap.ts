@@ -147,6 +147,8 @@ class Tilemap {
       } else {
         this.tiles[y][x].liquid.texture = PIXI.Texture.EMPTY;
       }
+    } else {
+      this.tiles[y][x].liquid.texture = PIXI.Texture.EMPTY;
     }
   }
 
