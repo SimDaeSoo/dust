@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import * as PIXI_LAYERS from '@pixi/layers';
 import Stats from 'stats.js';
 import { Map, Engine, Lighting, Vector, Square, MapData, LiquidSimulator } from '@dust/core';
 import '../static/index.css';
@@ -45,7 +46,6 @@ async function main(): Promise<void> {
   const app = new PIXI.Application({
     width: window.innerWidth,
     height: window.innerHeight,
-    backgroundColor: 0x444444,
     sharedLoader: true,
     powerPreference: 'high-performance',
     autoStart: false,
@@ -54,7 +54,8 @@ async function main(): Promise<void> {
     preserveDrawingBuffer: false,
     resolution,
   });
-
+  app.stage = new PIXI_LAYERS.Stage();
+  app.stage.filters = [new AdvancedBloomFilter({ threshold: 0.1, quality: 8 })];
   app.view.style.width = '100%';
   app.view.style.height = '100%';
   document.body.appendChild(app.view);
@@ -74,29 +75,46 @@ async function main(): Promise<void> {
     deathLimit: 2
   });
   // --------------------------------------------------------------------------
+  const stage = new PIXI.Container();
   const texture = PIXI.Texture.WHITE;
   const viewport: Square = { x: 64, y: 64, w: 1280, h: 720 };
   const margin = 2;
   const tilemap = new Tilemap(map, viewport, { margin });
   let targetContainer: any;
-  app.stage.addChild(tilemap.container);
+  stage.addChild(tilemap.container);
 
   // Graphics
+  const maskGraphic = new PIXI.Graphics();
   const lightGraphic = new PIXI.Graphics();
   const verticiesGraphic = new PIXI.Graphics();
 
-  // Test Light Filters
-  // app.stage.filters = [new AdvancedBloomFilter({ quality: 8 })];
-  // lightGraphic.filters = [new OutlineFilter(Math.floor(map.tileSize / 2), 0xFFFFFF, 0.5)];
+  // Lighting
+  const lighting = new PIXI_LAYERS.Layer();
+  lighting.on('display', (element) => {
+    element.blendMode = PIXI.BLEND_MODES.ADD;
+  });
+  lighting.useRenderTexture = true;
+  lighting.clearColor = [0.1, 0.1, 0.1, 1]; // ambient gray
+  lightGraphic.blendMode = PIXI.BLEND_MODES.MULTIPLY;
+  lightGraphic.filters = [new OutlineFilter(Math.floor(map.tileSize / 2), 0xFFFFFF, 0.5), new PIXI.filters.BlurFilter(16)];
+  lightGraphic.mask = maskGraphic;
+  lightGraphic.parentLayer = lighting;
 
-  app.stage.addChild(lightGraphic);
-  app.stage.addChild(verticiesGraphic);
+  const lightingSprite = new PIXI.Sprite(lighting.getRenderTexture());
+  lightingSprite.blendMode = PIXI.BLEND_MODES.MULTIPLY;
+
+  stage.addChild(lightGraphic);
+  stage.addChild(verticiesGraphic);
+  stage.addChild(maskGraphic);
+  app.stage.addChild(stage);
+  app.stage.addChild(lighting);
+  app.stage.addChild(lightingSprite);
 
   // Character
   const characters: Array<{ container: PIXI.Container, vector: Vector, sprite: PIXI.Sprite }> = [];
-  const characterSize = 16;
+  const characterSize = 8;
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 50; i++) {
     const container = new PIXI.Container();
     const sprite = new PIXI.Sprite(texture);
     sprite.width = characterSize;
@@ -105,7 +123,7 @@ async function main(): Promise<void> {
     container.addChild(sprite);
     container.x = 1280 / 2 + Math.round(Math.random() * 400);
     container.y = 720 / 2 + Math.round(Math.random() * 200);
-    app.stage.addChild(container);
+    stage.addChild(container);
 
     const vector = { x: 0, y: 0 };
     characters.push({ container, vector, sprite });
@@ -128,6 +146,7 @@ async function main(): Promise<void> {
 
     if (isLightingFrame) {
       envFrame = 0;
+      maskGraphic.clear();
       lightGraphic.clear();
       verticiesGraphic.clear();
     }
@@ -166,8 +185,7 @@ async function main(): Promise<void> {
       if (!collisionDirection.y) container.y += vector.y;
 
       if (isLightingFrame) {
-        const currentTile = map.grid[Math.floor(container.y / map.tileSize)][Math.floor(container.x / map.tileSize)];
-        const LIGHT_LENGTH = Math.max(2, 6 - Math.floor(currentTile.liquid * 2));
+        const LIGHT_LENGTH = 6;
         const isInViewPort: boolean =
           container.x - (map.tileSize * LIGHT_LENGTH) <= viewport.x + viewport.w &&
           container.y - (map.tileSize * LIGHT_LENGTH) <= viewport.y + viewport.h &&
@@ -178,16 +196,14 @@ async function main(): Promise<void> {
         if (isInViewPort) {
           sprite.tint = 0xFF00FF;
           const polygon = Lighting.getLightingPolygon({ x: container.x + characterSize / 2, y: container.y + characterSize / 2 }, map, LIGHT_LENGTH);
-          lightGraphic.beginFill(0xFFFFFF, 0.2);
-          lightGraphic.drawPolygon(polygon as Array<PIXI.Point>);
+
+          lightGraphic.beginFill(0xFFFFFF, 0.5);
+          lightGraphic.drawCircle(container.x + characterSize / 2, container.y + characterSize / 2, LIGHT_LENGTH * map.tileSize);
           lightGraphic.endFill();
 
-          const size = 4;
-          verticiesGraphic.beginFill(0xAA0000);
-          for (const point of polygon) {
-            verticiesGraphic.drawRect(point.x - size / 2, point.y - size / 2, size, size);
-          }
-          verticiesGraphic.endFill();
+          maskGraphic.beginFill(0xFFFFFF);
+          maskGraphic.drawPolygon(polygon as Array<PIXI.Point>);
+          maskGraphic.endFill();
         } else {
           sprite.tint = 0xFF0000;
         }
@@ -206,10 +222,10 @@ async function main(): Promise<void> {
       LiquidSimulator.step(map, riquidStepOptions);
     }
     tilemap.update();
+    stage.x = 640 - targetContainer.x;
+    stage.y = 360 - targetContainer.y;
     app.render();
     stats.update();
-    app.stage.x = 640 - targetContainer.x;
-    app.stage.y = 360 - targetContainer.y;
     window.requestAnimationFrame(render);
   };
 
