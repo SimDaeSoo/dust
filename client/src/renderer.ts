@@ -82,7 +82,7 @@ async function main(): Promise<void> {
     tileTypes: [4],
     density: {
       block: 0.3,
-      liquid: 0.5
+      liquid: 1
     },
     birthLimit: 3,
     deathLimit: 2
@@ -101,12 +101,9 @@ async function main(): Promise<void> {
 
   // Lighting
   const lighting = new PIXI_LAYERS.Layer();
-  lighting.on('display', (element) => {
-    element.blendMode = PIXI.BLEND_MODES.ADD;
-  });
   lighting.useRenderTexture = true;
   lighting.clearColor = [0.1, 0.1, 0.1, 1];
-  lightGraphic.blendMode = PIXI.BLEND_MODES.MULTIPLY;
+  lightGraphic.blendMode = PIXI.BLEND_MODES.ADD;
   lightGraphic.filters = [new OutlineFilter(Math.floor(map.tileSize / 2), 0xFFFFFF, 0.5), new PIXI.filters.BlurFilter(16)];
   lightGraphic.mask = maskGraphic;
   lightGraphic.parentLayer = lighting;
