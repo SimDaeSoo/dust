@@ -41,6 +41,9 @@ function generate(
           movable: false,
           stable: false,
           checked: false,
+          lightLevel: 0,
+          backgroundTileType: 1,
+          backgroundTileNumber: 0,
           tileNumber: 0,
           tileType: options.tileTypes[Math.floor(Math.random() * options.tileTypes.length)]
         };
@@ -52,6 +55,9 @@ function generate(
           movable: true,
           stable: false,
           checked: false,
+          lightLevel: 0,
+          backgroundTileType: 1,
+          backgroundTileNumber: 0,
           tileNumber: 0,
           tileType: 0
         };
