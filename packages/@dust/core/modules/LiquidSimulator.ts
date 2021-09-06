@@ -19,6 +19,7 @@ function calculateVerticalFlowValue(remainingLiquid: number, destination: Tile):
   }
 }
 
+// UnstablePoints Array Garbage Coolection Optimization
 function step(map: MapData, options: { currentPartition: number, maximum: number, processOrder: number }): void {
   let accumulation = 0;
   let flow = 0;

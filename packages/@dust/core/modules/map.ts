@@ -263,6 +263,7 @@ function print(map: MapData, options?: { checkPoints: Array<{ position: Point, c
 export {
   generate,
   createEmptyBoolGrid,
+  getTileNumber,
   fillRandomGrid,
   nextStep,
   print
