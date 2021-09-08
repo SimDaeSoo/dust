@@ -161,6 +161,8 @@ class Tilemap {
       } else {
         this.tiles[y][x].background.texture = PIXI.Texture.EMPTY;
       }
+    } else {
+      this.tiles[y][x].background.texture = PIXI.Texture.EMPTY;
     }
   }
 

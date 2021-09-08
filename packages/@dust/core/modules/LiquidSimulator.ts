@@ -22,34 +22,37 @@ function calculateVerticalFlowValue(remainingLiquid: number, destination: Tile):
 // UnstablePoints Array Garbage Coolection Optimization
 function step(map: MapData, options: { currentPartition: number, maximum: number, processOrder: number }): void {
   let accumulation = 0;
-  let flow = 0;
+  let x = undefined;
+  let y = undefined;
 
   if (options.processOrder === 0) {
-    for (let i = options.currentPartition; i < map.unstablePoints.length; i++) {
+    let remainingValue = undefined;
+    let flow = 0;
+    for (let i = options.currentPartition; i < map.unstables[0].length; i++) {
       if (accumulation >= options.maximum) return;
-      const { x, y } = map.unstablePoints[i];
-      const cell = map.grid[y][x];
-      let remainingValue = cell.liquid;
+      x = map.unstables[0].points[i].x;
+      y = map.unstables[0].points[i].y;
+      remainingValue = map.grid[y][x].liquid;
 
       options.currentPartition++;
       accumulation++;
 
       if (y < map.height - 1 && map.grid[y + 1][x].movable) {
-        flow = calculateVerticalFlowValue(cell.liquid, map.grid[y + 1][x]) - map.grid[y + 1][x].liquid;
+        flow = calculateVerticalFlowValue(map.grid[y][x].liquid, map.grid[y + 1][x]) - map.grid[y + 1][x].liquid;
 
         if (map.grid[y + 1][x].liquid > 0 && flow > MIN_FLOW) flow *= FLOW_SPEED;
 
         flow = Math.max(flow, 0);
-        if (flow > Math.min(MAX_FLOW, cell.liquid)) {
-          flow = Math.min(MAX_FLOW, cell.liquid);
+        if (flow > Math.min(MAX_FLOW, map.grid[y][x].liquid)) {
+          flow = Math.min(MAX_FLOW, map.grid[y][x].liquid);
         }
         if (flow != 0) {
           remainingValue -= flow;
-          cell.diff -= flow;
+          map.grid[y][x].diff -= flow;
           map.grid[y + 1][x].diff += flow;
         }
       }
-      if (remainingValue < MIN_LIQUID_VALUE) cell.diff -= remainingValue;
+      if (remainingValue < MIN_LIQUID_VALUE) map.grid[y][x].diff -= remainingValue;
 
       if (x > 0 && map.grid[y][x - 1].movable) {
         flow = (remainingValue - map.grid[y][x - 1].liquid) / 4;
@@ -63,11 +66,11 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
 
         if (flow != 0) {
           remainingValue -= flow;
-          cell.diff -= flow;
+          map.grid[y][x].diff -= flow;
           map.grid[y][x - 1].diff += flow;
         }
       }
-      if (remainingValue < MIN_LIQUID_VALUE) cell.diff -= remainingValue;
+      if (remainingValue < MIN_LIQUID_VALUE) map.grid[y][x].diff -= remainingValue;
 
       if (x < map.width - 1 && map.grid[y][x + 1].movable) {
         flow = (remainingValue - map.grid[y][x + 1].liquid) / 3;
@@ -80,11 +83,11 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
 
         if (flow != 0) {
           remainingValue -= flow;
-          cell.diff -= flow;
+          map.grid[y][x].diff -= flow;
           map.grid[y][x + 1].diff += flow;
         }
       }
-      if (remainingValue < MIN_LIQUID_VALUE) cell.diff -= remainingValue;
+      if (remainingValue < MIN_LIQUID_VALUE) map.grid[y][x].diff -= remainingValue;
 
       if (y > 0 && map.grid[y - 1][x].movable) {
         flow = remainingValue - calculateVerticalFlowValue(remainingValue, map.grid[y - 1][x]);
@@ -97,22 +100,24 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
 
         if (flow != 0) {
           remainingValue -= flow;
-          cell.diff -= flow;
+          map.grid[y][x].diff -= flow;
           map.grid[y - 1][x].diff += flow;
         }
       }
     }
   }
 
-  if (options.processOrder === 0 && options.currentPartition >= map.unstablePoints.length - 1) {
+  if (options.processOrder === 0 && options.currentPartition >= map.unstables[0].length - 1) {
     options.processOrder = 1;
     options.currentPartition = 0;
+    map.unstables[1].length = 0;
   }
 
   if (options.processOrder === 1) {
-    while (map.unstablePoints.length) {
+    for (let i = options.currentPartition; i < map.unstables[0].length; i++) {
       if (accumulation >= options.maximum) return;
-      const { x, y } = map.unstablePoints.pop() || { x: 0, y: 0 };
+      x = map.unstables[0].points[i].x;
+      y = map.unstables[0].points[i].y;
       options.currentPartition++;
       accumulation++;
       map.grid[y][x].liquid += map.grid[y][x].diff;
@@ -129,55 +134,63 @@ function step(map: MapData, options: { currentPartition: number, maximum: number
         } else if (map.grid[y][x].liquid && !map.grid[y][x].checked) {
           map.grid[y][x].checked = true;
           map.grid[y][x].stable = false;
-          map.nextUnstablePoints.push({ x, y });
+          map.unstables[1].points[map.unstables[1].length].x = x;
+          map.unstables[1].points[map.unstables[1].length++].y = y;
         }
       } else {
         map.grid[y][x].stableLevel = 0;
         if (map.grid[y][x].liquid && !map.grid[y][x].checked) {
           map.grid[y][x].checked = true;
           map.grid[y][x].stable = false;
-          map.nextUnstablePoints.push({ x, y });
+          map.unstables[1].points[map.unstables[1].length].x = x;
+          map.unstables[1].points[map.unstables[1].length++].y = y;
         }
         if (y > 0 && map.grid[y - 1][x].movable && !map.grid[y - 1][x].checked) {
           map.grid[y - 1][x].checked = true;
           map.grid[y - 1][x].stable = false;
-          map.nextUnstablePoints.push({ x, y: y - 1 });
+          map.unstables[1].points[map.unstables[1].length].x = x;
+          map.unstables[1].points[map.unstables[1].length++].y = y - 1;
         }
         if (y < map.height - 1 && map.grid[y + 1][x].movable && !map.grid[y + 1][x].checked) {
           map.grid[y + 1][x].checked = true;
           map.grid[y + 1][x].stable = false;
-          map.nextUnstablePoints.push({ x, y: y + 1 });
+          map.unstables[1].points[map.unstables[1].length].x = x;
+          map.unstables[1].points[map.unstables[1].length++].y = y + 1;
         }
         if (x > 0 && map.grid[y][x - 1].movable && !map.grid[y][x - 1].checked) {
           map.grid[y][x - 1].checked = true;
           map.grid[y][x - 1].stable = false;
-          map.nextUnstablePoints.push({ x: x - 1, y });
+          map.unstables[1].points[map.unstables[1].length].x = x - 1;
+          map.unstables[1].points[map.unstables[1].length++].y = y;
         }
         if (x < map.width - 1 && map.grid[y][x + 1].movable && !map.grid[y][x + 1].checked) {
           map.grid[y][x + 1].checked = true;
           map.grid[y][x + 1].stable = false;
-          map.nextUnstablePoints.push({ x: x + 1, y });
+          map.unstables[1].points[map.unstables[1].length].x = x + 1;
+          map.unstables[1].points[map.unstables[1].length++].y = y;
         }
       }
 
       map.grid[y][x].diff = 0;
     }
 
+    map.unstables[0].length = 0;
     options.processOrder = 2;
     options.currentPartition = 0;
   }
 
   if (options.processOrder === 2) {
-    for (let i = options.currentPartition; i < map.nextUnstablePoints.length; i++) {
+    for (let i = options.currentPartition; i < map.unstables[1].length; i++) {
+      x = map.unstables[1].points[i].x;
+      y = map.unstables[1].points[i].y;
+
       if (accumulation >= options.maximum) return;
-      const { x, y } = map.nextUnstablePoints[i];
+      map.unstables[0].points[map.unstables[0].length].x = map.unstables[1].points[i].x;
+      map.unstables[0].points[map.unstables[0].length++].y = map.unstables[1].points[i].y;
       options.currentPartition++;
       accumulation++;
       map.grid[y][x].checked = false;
     }
-
-    map.unstablePoints = map.nextUnstablePoints;
-    map.nextUnstablePoints = [];
 
     options.currentPartition = 0;
     options.processOrder = 0;

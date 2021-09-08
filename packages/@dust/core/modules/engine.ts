@@ -1,16 +1,14 @@
 import { Line, Boundary, Square, Vector, MapData, Point, Dictionary, CollisionDirectionLine, DIRECTION } from '../interfaces';
 
-// TODO: 맵 끝 외곽선 처리
+// TODO: Garbage Collection 최적화.
 function collision(vectorSquare: { square: Square, vector: Vector }, map: MapData): Array<CollisionDirectionLine> {
-  const lines: Dictionary<Array<Line>> = getDirectionLinesOnVectorSquare(vectorSquare, map);
-  return getCollisionsVectorSquareDirectionLines(vectorSquare, lines);
+  return getCollisionsVectorSquareDirectionLines(vectorSquare, getDirectionLinesOnVectorSquare(vectorSquare, map));
 }
 
 function filteringRealCollisionDirectionLines(collisionDirectionLines: Array<CollisionDirectionLine>): Array<CollisionDirectionLine> {
   if (!collisionDirectionLines.length) return [];
-  const filteredCollisionDirectionLines: Array<CollisionDirectionLine> = [...collisionDirectionLines];
 
-  filteredCollisionDirectionLines.sort((collisionLineA: CollisionDirectionLine, collisionLineB: CollisionDirectionLine): number => {
+  collisionDirectionLines.sort((collisionLineA: CollisionDirectionLine, collisionLineB: CollisionDirectionLine): number => {
     if (collisionLineA.dt > collisionLineB.dt) {
       return 1;
     } else if (collisionLineA.dt < collisionLineB.dt) {
@@ -24,48 +22,48 @@ function filteringRealCollisionDirectionLines(collisionDirectionLines: Array<Col
     }
   });
 
-  const firstCollisionDirectionLine: CollisionDirectionLine = filteredCollisionDirectionLines[0];
+  const firstCollisionDirectionLine: CollisionDirectionLine = collisionDirectionLines[0];
   const collisionDirection: DIRECTION = firstCollisionDirectionLine.direction;
 
   switch (collisionDirection) {
     case DIRECTION.LEFT: {
-      for (let i = filteredCollisionDirectionLines.length - 1; i > 0; i--) {
-        const collisionDirectionLine: CollisionDirectionLine = filteredCollisionDirectionLines[i];
+      for (let i = collisionDirectionLines.length - 1; i > 0; i--) {
+        const collisionDirectionLine: CollisionDirectionLine = collisionDirectionLines[i];
         if (collisionDirectionLine.line[1].x <= firstCollisionDirectionLine.line[0].x) {
-          filteredCollisionDirectionLines.splice(i, 1);
+          collisionDirectionLines.splice(i, 1);
         }
       }
       break;
     }
     case DIRECTION.RIGHT: {
-      for (let i = filteredCollisionDirectionLines.length - 1; i > 0; i--) {
-        const collisionDirectionLine: CollisionDirectionLine = filteredCollisionDirectionLines[i];
+      for (let i = collisionDirectionLines.length - 1; i > 0; i--) {
+        const collisionDirectionLine: CollisionDirectionLine = collisionDirectionLines[i];
         if (collisionDirectionLine.line[0].x >= firstCollisionDirectionLine.line[0].x) {
-          filteredCollisionDirectionLines.splice(i, 1);
+          collisionDirectionLines.splice(i, 1);
         }
       }
       break;
     }
     case DIRECTION.TOP: {
-      for (let i = filteredCollisionDirectionLines.length - 1; i > 0; i--) {
-        const collisionDirectionLine: CollisionDirectionLine = filteredCollisionDirectionLines[i];
+      for (let i = collisionDirectionLines.length - 1; i > 0; i--) {
+        const collisionDirectionLine: CollisionDirectionLine = collisionDirectionLines[i];
         if (collisionDirectionLine.line[1].y <= firstCollisionDirectionLine.line[0].y) {
-          filteredCollisionDirectionLines.splice(i, 1);
+          collisionDirectionLines.splice(i, 1);
         }
       }
       break;
     }
     case DIRECTION.BOTTOM: {
-      for (let i = filteredCollisionDirectionLines.length - 1; i > 0; i--) {
-        const collisionDirectionLine: CollisionDirectionLine = filteredCollisionDirectionLines[i];
+      for (let i = collisionDirectionLines.length - 1; i > 0; i--) {
+        const collisionDirectionLine: CollisionDirectionLine = collisionDirectionLines[i];
         if (collisionDirectionLine.line[0].y >= firstCollisionDirectionLine.line[0].y) {
-          filteredCollisionDirectionLines.splice(i, 1);
+          collisionDirectionLines.splice(i, 1);
         }
       }
     }
   }
 
-  return filteredCollisionDirectionLines;
+  return collisionDirectionLines;
 }
 
 function getCollisionsVectorSquareDirectionLines(vectorSquare: { square: Square, vector: Vector }, directionLines: Dictionary<Array<Line>>): Array<CollisionDirectionLine> {
@@ -171,7 +169,7 @@ function getCollisionsVectorSquareDirectionLines(vectorSquare: { square: Square,
     }
   }
 
-  return filteringRealCollisionDirectionLines(Object.keys(collisionDirectionLines).map(key => collisionDirectionLines[key]));
+  return filteringRealCollisionDirectionLines([collisionDirectionLines[DIRECTION.TOP], collisionDirectionLines[DIRECTION.BOTTOM], collisionDirectionLines[DIRECTION.LEFT], collisionDirectionLines[DIRECTION.RIGHT]]);
 }
 
 function getDirectionLinesOnVectorSquare(vectorSquare: { square: Square, vector: Vector }, map: MapData): Dictionary<Array<Line>> {

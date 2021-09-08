@@ -1,6 +1,7 @@
 import { Boundary, Dictionary, Line, MapData, Point } from "../interfaces/index";
 import { lineIntersection } from "./Engine";
 
+// TODO: Garbage Collection 최적화.
 function getLightingPolygon(lightPoint: Point, map: MapData, length: number, options?: { getTiles: boolean }): Array<Point> {
   const vertices: Array<Point> = [];
   const lines: Array<Line> = [];
@@ -164,11 +165,11 @@ function getLightingPolygon(lightPoint: Point, map: MapData, length: number, opt
     { x: positionBoundary.min.x * map.tileSize, y: (positionBoundary.max.y + 1) * map.tileSize },
     { x: (positionBoundary.max.x + 1) * map.tileSize, y: (positionBoundary.max.y + 1) * map.tileSize }
   );
-
   const RAY_LENGTH = 2 * length * map.tileSize;
   const EPSILON = 0.000001;
+  let radian;
   for (const vertex of vertices) {
-    const radian = Math.atan2(vertex.y - lightPoint.y, vertex.x - lightPoint.x);
+    radian = Math.atan2(vertex.y - lightPoint.y, vertex.x - lightPoint.x);
     const rays: Array<Line> = [
       [{ x: lightPoint.x, y: lightPoint.y }, { x: lightPoint.x + Math.cos(radian + EPSILON) * RAY_LENGTH, y: lightPoint.y + Math.sin(radian + EPSILON) * RAY_LENGTH }],
       [{ x: lightPoint.x, y: lightPoint.y }, { x: lightPoint.x + Math.cos(radian - EPSILON) * RAY_LENGTH, y: lightPoint.y + Math.sin(radian - EPSILON) * RAY_LENGTH }],
@@ -177,7 +178,6 @@ function getLightingPolygon(lightPoint: Point, map: MapData, length: number, opt
     for (const ray of rays) {
       for (const line of lines) {
         const dt = lineIntersection(ray, line);
-
         if (dt >= 0 && dt <= 1) {
           polygon.push({ x: ray[0].x + (ray[1].x - ray[0].x) * dt, y: ray[0].y + (ray[1].y - ray[0].y) * dt });
           break;

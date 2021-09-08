@@ -39,8 +39,6 @@ async function main(): Promise<void> {
   PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
   PIXI.settings.MIPMAP_TEXTURES = PIXI.MIPMAP_MODES.OFF;
   PIXI.settings.STRICT_TEXTURE_CACHE = true;
-  PIXI.settings.PRECISION_FRAGMENT = PIXI.PRECISION.LOW;
-  PIXI.settings.PRECISION_VERTEX = PIXI.PRECISION.LOW;
 
   const stats = new Stats();
   const app = new PIXI.Application({
@@ -64,29 +62,44 @@ async function main(): Promise<void> {
 
   const riquidStepOptions: { currentPartition: number, maximum: number, processOrder: number } = { currentPartition: 0, maximum: 40000, processOrder: 0 };
   // Huge World - 8400*2400 - density 0.0005
-  // const map: MapData = Map.generate(8400, 2400, 32, `${Math.random()}`, {
-  //   step: 4,
-  //   clearTop: 3,
-  //   tileTypes: [4],
+  // const map: MapData = Map.generate(8400, 2400, 32, `HugeWorld`, {
+  //   step: 3,
+  //   clearTop: 10,
   //   density: {
   //     block: 0.3,
-  //     liquid: 0.0005
+  //     liquid: 0.008
   //   },
+  //   tileTypes: [4],
   //   birthLimit: 3,
-  //   deathLimit: 2
+  //   deathLimit: 2,
+  //   liquidLimit: 4000000
   // });
-  // Small World
-  const map: MapData = Map.generate(80, 45, 32, `${Math.random()}`, {
+  // Midium World
+  const map: MapData = Map.generate(800, 450, 32, `${Math.random()}`, {
     step: 4,
     clearTop: 3,
     tileTypes: [4],
     density: {
       block: 0.3,
-      liquid: 1
+      liquid: 0.3
     },
     birthLimit: 3,
-    deathLimit: 2
+    deathLimit: 2,
+    liquidLimit: 2000000
   });
+  // Small World
+  // const map: MapData = Map.generate(80, 45, 32, `${Math.random()}`, {
+  //   step: 4,
+  //   clearTop: 3,
+  //   tileTypes: [4],
+  //   density: {
+  //     block: 0.3,
+  //     liquid: 1
+  //   },
+  //   birthLimit: 3,
+  //   deathLimit: 2,
+  //   liquidLimit: 100000
+  // });
   // --------------------------------------------------------------------------
   const stage = new PIXI.Container();
   const texture = PIXI.Texture.WHITE;
@@ -97,29 +110,29 @@ async function main(): Promise<void> {
 
   // Graphics
   const maskGraphic = new PIXI.Graphics();
-  const lightGraphic = new PIXI.Graphics();
+  const lightContainer = new PIXI.Container();
 
   // Lighting
-  const lighting = new PIXI_LAYERS.Layer();
-  lighting.useRenderTexture = true;
-  lighting.clearColor = [0.1, 0.1, 0.1, 1];
-  lightGraphic.blendMode = PIXI.BLEND_MODES.ADD;
-  lightGraphic.filters = [new OutlineFilter(Math.floor(map.tileSize / 2), 0xFFFFFF, 0.5), new PIXI.filters.BlurFilter(16)];
-  lightGraphic.mask = maskGraphic;
-  lightGraphic.parentLayer = lighting;
+  const LIGHT_LENGTH = 6;
+  const lightingLayer = new PIXI_LAYERS.Layer();
+  lightingLayer.useRenderTexture = true;
+  lightingLayer.clearColor = [0.075, 0.075, 0.075, 1];
+  lightContainer.filters = [new OutlineFilter(Math.floor(map.tileSize / 2), 0xFFFFFF, 0.5), new PIXI.filters.BlurFilter(64)];
+  lightContainer.mask = maskGraphic;
+  lightContainer.parentLayer = lightingLayer;
 
-  const lightingSprite = new PIXI.Sprite(lighting.getRenderTexture());
+  const lightingSprite = new PIXI.Sprite(lightingLayer.getRenderTexture());
   lightingSprite.blendMode = PIXI.BLEND_MODES.MULTIPLY;
 
   stage.addChild(tilemap.container);
-  stage.addChild(lightGraphic);
+  stage.addChild(lightContainer);
   stage.addChild(maskGraphic);
   app.stage.addChild(stage);
-  app.stage.addChild(lighting);
+  app.stage.addChild(lightingLayer);
   app.stage.addChild(lightingSprite);
 
   // Character
-  const characters: Array<{ container: PIXI.Container, vector: Vector, sprite: PIXI.Sprite }> = [];
+  const characters: Array<{ container: PIXI.Container, vector: Vector, sprite: PIXI.Sprite, lightGraphic: PIXI.Graphics }> = [];
   const characterSize = 8;
 
   for (let i = 0; i < 1; i++) {
@@ -133,8 +146,16 @@ async function main(): Promise<void> {
     container.y = 720 / 2 + Math.round(Math.random() * 200);
     stage.addChild(container);
 
+    const lightGraphic = new PIXI.Graphics();
+    lightGraphic.beginFill(0xFFFFFF, 0.35);
+    lightGraphic.drawCircle(0, 0, map.tileSize * 6);
+    lightGraphic.endFill();
+    lightGraphic.blendMode = PIXI.BLEND_MODES.ADD;
+
+    lightContainer.addChild(lightGraphic);
+
     const vector = { x: 0, y: 0 };
-    characters.push({ container, vector, sprite });
+    characters.push({ container, vector, sprite, lightGraphic });
 
     setInterval(() => {
       vector.x = (Math.random() - Math.random()) * 2;
@@ -148,17 +169,19 @@ async function main(): Promise<void> {
 
   let liquidEnvFrame = 0;
   let lightEnvFrame = 0;
+  let isLightingFrame;
+  let isLiquidFrame;
+  let collisionDatas;
   const render = () => {
-    const isLightingFrame = (++lightEnvFrame % 6) === 0;
-    const isLiquidFrame = (++liquidEnvFrame % 2) === 0;
+    isLightingFrame = (++lightEnvFrame % 2) === 0;
+    isLiquidFrame = (++liquidEnvFrame % 2) === 1;
 
     if (isLightingFrame) {
       maskGraphic.clear();
-      lightGraphic.clear();
     }
 
-    for (const { container, vector, sprite } of characters) {
-      const collisionDatas = Engine.collision({
+    for (const { container, vector, sprite, lightGraphic } of characters) {
+      collisionDatas = Engine.collision({
         square: { x: container.x, y: container.y, w: characterSize, h: characterSize },
         vector: { x: vector.x, y: vector.y }
       }, map);
@@ -191,7 +214,6 @@ async function main(): Promise<void> {
       if (!collisionDirection.y) container.y += vector.y;
 
       if (isLightingFrame) {
-        const LIGHT_LENGTH = 6;
         const isInViewPort: boolean =
           container.x - (map.tileSize * LIGHT_LENGTH) <= viewport.x + viewport.w &&
           container.y - (map.tileSize * LIGHT_LENGTH) <= viewport.y + viewport.h &&
@@ -203,13 +225,12 @@ async function main(): Promise<void> {
           sprite.tint = 0xFF00FF;
           const polygon = Lighting.getLightingPolygon({ x: container.x + characterSize / 2, y: container.y + characterSize / 2 }, map, LIGHT_LENGTH);
 
-          lightGraphic.beginFill(0xFFFFFF, 0.3);
-          lightGraphic.drawCircle(container.x + characterSize / 2, container.y + characterSize / 2, LIGHT_LENGTH * map.tileSize);
-          lightGraphic.endFill();
-
-          maskGraphic.beginFill(0xFFFFFF);
+          maskGraphic.beginFill();
           maskGraphic.drawPolygon(polygon as Array<PIXI.Point>);
           maskGraphic.endFill();
+
+          lightGraphic.x = container.x + characterSize / 2;
+          lightGraphic.y = container.y + characterSize / 2;
         } else {
           sprite.tint = 0xFF0000;
         }

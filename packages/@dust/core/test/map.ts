@@ -83,7 +83,7 @@ async function mapGenrateTest(): Promise<void> {
         }
       }
     }
-    const map: MapData = { seed, width, height, tileSize: 4, grid, unstablePoints: [], nextUnstablePoints: [] };
+    const map: MapData = { seed, width, height, tileSize: 4, grid, unstables: [{ points: [], length: 0 }, { points: [], length: 0 }], liquidLimit: 3000000 };
     console.clear();
     print(map);
     console.log('step:', step);

@@ -1,6 +1,7 @@
 import { MapData, Grid, Tile, Point } from "../interfaces";
 import * as seedrandom from 'seedrandom';
 
+// TODO: Garbage Collection 최적화.
 function generate(
   width: number,
   height: number,
@@ -15,12 +16,16 @@ function generate(
       liquid: number
     },
     deathLimit: number,
-    birthLimit: number
+    birthLimit: number,
+    liquidLimit: number
   }): MapData {
-  const { step, density, deathLimit, birthLimit, clearTop } = options;
+  const { step, density, deathLimit, birthLimit, clearTop, liquidLimit } = options;
   const baseGrid: Grid<boolean> = createEmptyBoolGrid(width, height);
   const random = seedrandom(seed);
-  const unstablePoints: Array<Point> = [];
+  const unstables: Array<{ points: Array<Point>, length: number }> = [
+    { points: new Array(liquidLimit).fill(true).map(() => ({ x: 0, y: 0 })), length: 0 },
+    { points: new Array(liquidLimit).fill(true).map(() => ({ x: 0, y: 0 })), length: 0 }
+  ];
 
   fillRandomGrid(baseGrid, seed, density.block);
 
@@ -61,10 +66,11 @@ function generate(
           tileNumber: 0,
           tileType: 0
         };
+      }
 
-        if (grid[y][x].liquid) {
-          unstablePoints.push({ x, y });
-        }
+      if (grid[y][x].liquid) {
+        unstables[0].points[unstables[0].length].x = x;
+        unstables[0].points[unstables[0].length++].y = y;
       }
     }
   }
@@ -81,8 +87,8 @@ function generate(
     height,
     tileSize,
     grid,
-    unstablePoints,
-    nextUnstablePoints: []
+    unstables,
+    liquidLimit
   };
 }
 

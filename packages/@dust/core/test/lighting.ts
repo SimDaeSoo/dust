@@ -13,7 +13,8 @@ async function lightingTest(): Promise<void> {
       tileTypes: [1],
       clearTop: 10,
       birthLimit: 3,
-      deathLimit: 2
+      deathLimit: 2,
+      liquidLimit: 3000000
     });
     const position: Point = getVaildPosition(map);
     position.x *= map.tileSize;

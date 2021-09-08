@@ -25,8 +25,11 @@ type MapData = {
   width: number,
   height: number,
   grid: Grid<Tile>,
-  unstablePoints: Array<Point>,
-  nextUnstablePoints: Array<Point>,
+  unstables: Array<{
+    points: Array<Point>,
+    length: number
+  }>,
+  liquidLimit: number
 }
 type CollisionDirectionLine = {
   dt: number,

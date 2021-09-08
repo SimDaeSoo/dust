@@ -1,6 +1,6 @@
 import { mapGenrateTest } from './map';
 import { lightingTest } from './lighting'
-import { fullLiquidTest, liquidTest, partitioningLiquidTest } from './liquid';
+import { fullLiquidTest, liquidTest, largeWorldLiquidTest, partitioningLiquidTest } from './liquid';
 
 async function main(): Promise<void> {
   while (true) {
@@ -8,6 +8,7 @@ async function main(): Promise<void> {
     await lightingTest();
     await fullLiquidTest();
     await liquidTest();
+    await largeWorldLiquidTest();
     await partitioningLiquidTest();
   }
 }
