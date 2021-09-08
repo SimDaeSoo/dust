@@ -4,7 +4,11 @@ import { print, generate } from "../modules/Map";
 
 async function lightingTest(): Promise<void> {
   for (let i = 0; i < 3; i++) {
-    const map: MapData = generate(50, 35, 4, `${Math.random()}`, {
+    const map: MapData = generate({
+      width: 50,
+      height: 35,
+      tileSize: 4,
+      seed: `${Math.random()}`,
       step: 3,
       density: {
         block: 0.3,
@@ -20,7 +24,7 @@ async function lightingTest(): Promise<void> {
     position.x *= map.tileSize;
     position.y *= map.tileSize;
 
-    const tiles = getLightingPolygon(position, map, 10, { getTiles: true });
+    const tiles = getLightingPolygon(position, map, 10);
 
     console.clear();
     print(map, { checkPoints: [{ position, color: '\x1b[31m', marker: '■' }] });

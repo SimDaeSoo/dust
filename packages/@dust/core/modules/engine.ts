@@ -67,7 +67,7 @@ function filteringRealCollisionDirectionLines(collisionDirectionLines: Array<Col
 }
 
 function getCollisionsVectorSquareDirectionLines(vectorSquare: { square: Square, vector: Vector }, directionLines: Dictionary<Array<Line>>): Array<CollisionDirectionLine> {
-  const collisionDirectionLines: Dictionary<CollisionDirectionLine> = {}
+  const collisionDirectionLines: Array<CollisionDirectionLine> = new Array(4);
 
   if (vectorSquare.vector.x > 0) {
     for (const line of directionLines[DIRECTION.LEFT]) {
@@ -88,8 +88,15 @@ function getCollisionsVectorSquareDirectionLines(vectorSquare: { square: Square,
         },
         vector: { x: 0, y: 0 }
       });
-      if (dt >= 0 && dt <= 1 && (!collisionDirectionLines[DIRECTION.RIGHT] || collisionDirectionLines[DIRECTION.RIGHT].dt >= dt)) {
-        collisionDirectionLines[DIRECTION.RIGHT] = { direction: DIRECTION.RIGHT, dt, line, duplicated: collisionDirectionLines[DIRECTION.RIGHT]?.dt === dt };
+      if (dt >= 0 && dt <= 1 && (!collisionDirectionLines[3] || collisionDirectionLines[3].dt >= dt)) {
+        if (!collisionDirectionLines[3]) {
+          collisionDirectionLines[3] = { direction: DIRECTION.RIGHT, dt, line, duplicated: false };
+        } else {
+          collisionDirectionLines[3].direction = DIRECTION.RIGHT;
+          collisionDirectionLines[3].dt = dt;
+          collisionDirectionLines[3].line = line;
+          collisionDirectionLines[3].duplicated = collisionDirectionLines[3]?.dt === dt;
+        }
       }
     }
   }
@@ -113,8 +120,15 @@ function getCollisionsVectorSquareDirectionLines(vectorSquare: { square: Square,
         },
         vector: { x: 0, y: 0 }
       });
-      if (dt >= 0 && dt <= 1 && (!collisionDirectionLines[DIRECTION.LEFT] || collisionDirectionLines[DIRECTION.LEFT].dt >= dt)) {
-        collisionDirectionLines[DIRECTION.LEFT] = { direction: DIRECTION.LEFT, dt, line, duplicated: collisionDirectionLines[DIRECTION.LEFT]?.dt === dt };
+      if (dt >= 0 && dt <= 1 && (!collisionDirectionLines[2] || collisionDirectionLines[2].dt >= dt)) {
+        if (!collisionDirectionLines[2]) {
+          collisionDirectionLines[2] = { direction: DIRECTION.LEFT, dt, line, duplicated: false };
+        } else {
+          collisionDirectionLines[2].direction = DIRECTION.LEFT;
+          collisionDirectionLines[2].dt = dt;
+          collisionDirectionLines[2].line = line;
+          collisionDirectionLines[2].duplicated = collisionDirectionLines[2]?.dt === dt;
+        }
       }
     }
   }
@@ -138,8 +152,15 @@ function getCollisionsVectorSquareDirectionLines(vectorSquare: { square: Square,
         },
         vector: { x: 0, y: 0 }
       });
-      if (dt >= 0 && dt <= 1 && (!collisionDirectionLines[DIRECTION.BOTTOM] || collisionDirectionLines[DIRECTION.BOTTOM].dt >= dt)) {
-        collisionDirectionLines[DIRECTION.BOTTOM] = { direction: DIRECTION.BOTTOM, dt, line, duplicated: collisionDirectionLines[DIRECTION.BOTTOM]?.dt === dt };
+      if (dt >= 0 && dt <= 1 && (!collisionDirectionLines[1] || collisionDirectionLines[1].dt >= dt)) {
+        if (!collisionDirectionLines[1]) {
+          collisionDirectionLines[1] = { direction: DIRECTION.BOTTOM, dt, line, duplicated: false };
+        } else {
+          collisionDirectionLines[1].direction = DIRECTION.BOTTOM;
+          collisionDirectionLines[1].dt = dt;
+          collisionDirectionLines[1].line = line;
+          collisionDirectionLines[1].duplicated = collisionDirectionLines[1]?.dt === dt;
+        }
       }
     }
   }
@@ -163,13 +184,20 @@ function getCollisionsVectorSquareDirectionLines(vectorSquare: { square: Square,
         },
         vector: { x: 0, y: 0 }
       });
-      if (dt >= 0 && dt <= 1 && (!collisionDirectionLines[DIRECTION.TOP] || collisionDirectionLines[DIRECTION.TOP].dt >= dt)) {
-        collisionDirectionLines[DIRECTION.TOP] = { direction: DIRECTION.TOP, dt, line, duplicated: collisionDirectionLines[DIRECTION.TOP]?.dt === dt };
+      if (dt >= 0 && dt <= 1 && (!collisionDirectionLines[0] || collisionDirectionLines[0].dt >= dt)) {
+        if (!collisionDirectionLines[0]) {
+          collisionDirectionLines[0] = { direction: DIRECTION.TOP, dt, line, duplicated: false };
+        } else {
+          collisionDirectionLines[0].direction = DIRECTION.TOP;
+          collisionDirectionLines[0].dt = dt;
+          collisionDirectionLines[0].line = line;
+          collisionDirectionLines[0].duplicated = collisionDirectionLines[0]?.dt === dt;
+        }
       }
     }
   }
 
-  return filteringRealCollisionDirectionLines([collisionDirectionLines[DIRECTION.TOP], collisionDirectionLines[DIRECTION.BOTTOM], collisionDirectionLines[DIRECTION.LEFT], collisionDirectionLines[DIRECTION.RIGHT]]);
+  return filteringRealCollisionDirectionLines(collisionDirectionLines.filter(v => !!v));
 }
 
 function getDirectionLinesOnVectorSquare(vectorSquare: { square: Square, vector: Vector }, map: MapData): Dictionary<Array<Line>> {

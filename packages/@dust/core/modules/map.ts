@@ -3,11 +3,11 @@ import * as seedrandom from 'seedrandom';
 
 // TODO: Garbage Collection 최적화.
 function generate(
-  width: number,
-  height: number,
-  tileSize: number,
-  seed: string,
   options: {
+    width: number,
+    height: number,
+    tileSize: number,
+    seed: string,
     step: number,
     clearTop: number,
     tileTypes: Array<number>,
@@ -19,7 +19,7 @@ function generate(
     birthLimit: number,
     liquidLimit: number
   }): MapData {
-  const { step, density, deathLimit, birthLimit, clearTop, liquidLimit } = options;
+  const { width, height, tileSize, seed, step, density, deathLimit, birthLimit, clearTop, liquidLimit } = options;
   const baseGrid: Grid<boolean> = createEmptyBoolGrid(width, height);
   const random = seedrandom(seed);
   const unstables: Array<{ points: Array<Point>, length: number }> = [

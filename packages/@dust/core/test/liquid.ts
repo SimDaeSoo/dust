@@ -3,7 +3,11 @@ import { print, generate } from "../modules/Map";
 import { step } from '../modules/LiquidSimulator';
 
 async function fullLiquidTest(): Promise<void> {
-  const map: MapData = generate(50, 35, 4, `${Math.random()}`, {
+  const map: MapData = generate({
+    width: 50,
+    height: 35,
+    tileSize: 4,
+    seed: `${Math.random()}`,
     step: 3,
     clearTop: 50,
     density: {
@@ -48,7 +52,11 @@ async function fullLiquidTest(): Promise<void> {
 }
 
 async function liquidTest(): Promise<void> {
-  const map: MapData = generate(50, 35, 4, `${Math.random()}`, {
+  const map: MapData = generate({
+    width: 50,
+    height: 35,
+    tileSize: 4,
+    seed: `${Math.random()}`,
     step: 3,
     clearTop: 10,
     density: {
@@ -92,7 +100,11 @@ async function liquidTest(): Promise<void> {
 }
 
 async function largeWorldLiquidTest(): Promise<void> {
-  const map: MapData = generate(8400, 2400, 4, `HugeWorld`, {
+  const map: MapData = generate({
+    width: 8400,
+    height: 2400,
+    tileSize: 4,
+    seed: `HugeWorld`,
     step: 3,
     clearTop: 10,
     density: {
@@ -135,7 +147,11 @@ async function largeWorldLiquidTest(): Promise<void> {
 }
 
 async function partitioningLiquidTest(): Promise<void> {
-  const map: MapData = generate(50, 35, 4, `${Math.random()}`, {
+  const map: MapData = generate({
+    width: 50,
+    height: 35,
+    tileSize: 4,
+    seed: `${Math.random()}`,
     step: 3,
     clearTop: 10,
     density: {

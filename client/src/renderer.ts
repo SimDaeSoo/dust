@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js';
 import * as PIXI_LAYERS from '@pixi/layers';
 import Stats from 'stats.js';
-import { Map, Engine, Lighting, Vector, Square, MapData, LiquidSimulator } from '@dust/core';
+import { Map, Engine, Lighting, Vector, Square, MapData, LiquidSimulator, Point } from '@dust/core';
 import '../static/index.css';
 import Tilemap from './tilemap';
 import { TILEMAP_DATA } from './constants';
@@ -62,31 +62,41 @@ async function main(): Promise<void> {
 
   const riquidStepOptions: { currentPartition: number, maximum: number, processOrder: number } = { currentPartition: 0, maximum: 40000, processOrder: 0 };
   // Huge World - 8400*2400 - density 0.0005
-  // const map: MapData = Map.generate(8400, 2400, 32, `HugeWorld`, {
-  //   step: 3,
-  //   clearTop: 10,
-  //   density: {
-  //     block: 0.3,
-  //     liquid: 0.008
-  //   },
-  //   tileTypes: [4],
-  //   birthLimit: 3,
-  //   deathLimit: 2,
-  //   liquidLimit: 4000000
-  // });
-  // Midium World
-  const map: MapData = Map.generate(800, 450, 32, `${Math.random()}`, {
-    step: 4,
-    clearTop: 3,
-    tileTypes: [4],
+  const map: MapData = Map.generate({
+    seed: 'HugeWorld',
+    width: 8400,
+    height: 2400,
+    tileSize: 32,
+    step: 3,
+    clearTop: 10,
     density: {
       block: 0.3,
-      liquid: 0.3
+      liquid: 0.008
     },
+    tileTypes: [4],
     birthLimit: 3,
     deathLimit: 2,
-    liquidLimit: 2000000
+    liquidLimit: 4000000
   });
+
+  // Midium World
+  // const map: MapData = Map.generate({
+  //   seed: `${Math.random()}`,
+  //   width: 450,
+  //   height: 450,
+  //   tileSize: 32,
+  //   step: 4,
+  //   clearTop: 0,
+  //   tileTypes: [4],
+  //   density: {
+  //     block: 0.3,
+  //     liquid: 0.3
+  //   },
+  //   birthLimit: 3,
+  //   deathLimit: 2,
+  //   liquidLimit: 2000000
+  // });
+
   // Small World
   // const map: MapData = Map.generate(80, 45, 32, `${Math.random()}`, {
   //   step: 4,
@@ -115,11 +125,16 @@ async function main(): Promise<void> {
   // Lighting
   const LIGHT_LENGTH = 6;
   const lightingLayer = new PIXI_LAYERS.Layer();
+  const blurFilter = new PIXI.filters.BlurFilter(64, 8, 1, 15);
+  blurFilter.autoFit = false;
   lightingLayer.useRenderTexture = true;
   lightingLayer.clearColor = [0.075, 0.075, 0.075, 1];
-  lightContainer.filters = [new OutlineFilter(Math.floor(map.tileSize / 2), 0xFFFFFF, 0.5), new PIXI.filters.BlurFilter(64)];
+  lightingLayer.filters = [blurFilter];
+
+  const outlineFilter = new OutlineFilter(Math.floor(map.tileSize / 2), 0xFFFFFF);
   lightContainer.mask = maskGraphic;
   lightContainer.parentLayer = lightingLayer;
+  lightContainer.filters = [outlineFilter];
 
   const lightingSprite = new PIXI.Sprite(lightingLayer.getRenderTexture());
   lightingSprite.blendMode = PIXI.BLEND_MODES.MULTIPLY;
@@ -132,10 +147,10 @@ async function main(): Promise<void> {
   app.stage.addChild(lightingSprite);
 
   // Character
-  const characters: Array<{ container: PIXI.Container, vector: Vector, sprite: PIXI.Sprite, lightGraphic: PIXI.Graphics }> = [];
+  const characters: Array<{ container: PIXI.Container, vector: Vector, sprite: PIXI.Sprite, lightGraphic: PIXI.Graphics, lightPolygon: Array<Point>, prevPosition: Point }> = [];
   const characterSize = 8;
 
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < 50; i++) {
     const container = new PIXI.Container();
     const sprite = new PIXI.Sprite(texture);
     sprite.width = characterSize;
@@ -147,7 +162,7 @@ async function main(): Promise<void> {
     stage.addChild(container);
 
     const lightGraphic = new PIXI.Graphics();
-    lightGraphic.beginFill(0xFFFFFF, 0.35);
+    lightGraphic.beginFill(0xFFFFFF, 0.3);
     lightGraphic.drawCircle(0, 0, map.tileSize * 6);
     lightGraphic.endFill();
     lightGraphic.blendMode = PIXI.BLEND_MODES.ADD;
@@ -155,7 +170,7 @@ async function main(): Promise<void> {
     lightContainer.addChild(lightGraphic);
 
     const vector = { x: 0, y: 0 };
-    characters.push({ container, vector, sprite, lightGraphic });
+    characters.push({ container, vector, sprite, lightGraphic, lightPolygon: [], prevPosition: { x: container.x, y: container.y } });
 
     setInterval(() => {
       vector.x = (Math.random() - Math.random()) * 2;
@@ -167,86 +182,76 @@ async function main(): Promise<void> {
     }
   }
 
-  let liquidEnvFrame = 0;
-  let lightEnvFrame = 0;
-  let isLightingFrame;
-  let isLiquidFrame;
   let collisionDatas;
   const render = () => {
-    isLightingFrame = (++lightEnvFrame % 2) === 0;
-    isLiquidFrame = (++liquidEnvFrame % 2) === 1;
+    maskGraphic.clear();
 
-    if (isLightingFrame) {
-      maskGraphic.clear();
-    }
-
-    for (const { container, vector, sprite, lightGraphic } of characters) {
+    for (let i = 0; i < characters.length; i++) {
       collisionDatas = Engine.collision({
-        square: { x: container.x, y: container.y, w: characterSize, h: characterSize },
-        vector: { x: vector.x, y: vector.y }
+        square: { x: characters[i].container.x, y: characters[i].container.y, w: characterSize, h: characterSize },
+        vector: { x: characters[i].vector.x, y: characters[i].vector.y }
       }, map);
       const collisionDirection: { x: boolean, y: boolean } = { x: false, y: false };
       for (const collisionData of collisionDatas) {
         switch (collisionData.direction) {
           case 3: {
             collisionDirection.y = true;
-            container.y = collisionData.line[0].y - characterSize;
+            characters[i].container.y = collisionData.line[0].y - characterSize;
             break;
           }
           case 2: {
             collisionDirection.y = true;
-            container.y = collisionData.line[0].y;
+            characters[i].container.y = collisionData.line[0].y;
             break;
           }
           case 1: {
             collisionDirection.x = true;
-            container.x = collisionData.line[0].x - characterSize;
+            characters[i].container.x = collisionData.line[0].x - characterSize;
             break;
           }
           case 0: {
             collisionDirection.x = true;
-            container.x = collisionData.line[0].x;
+            characters[i].container.x = collisionData.line[0].x;
             break;
           }
         }
       }
-      if (!collisionDirection.x) container.x += vector.x;
-      if (!collisionDirection.y) container.y += vector.y;
+      if (!collisionDirection.x) characters[i].container.x += characters[i].vector.x;
+      if (!collisionDirection.y) characters[i].container.y += characters[i].vector.y;
 
-      if (isLightingFrame) {
-        const isInViewPort: boolean =
-          container.x - (map.tileSize * LIGHT_LENGTH) <= viewport.x + viewport.w &&
-          container.y - (map.tileSize * LIGHT_LENGTH) <= viewport.y + viewport.h &&
-          container.x + characterSize + (map.tileSize * LIGHT_LENGTH) >= viewport.x &&
-          container.y + characterSize + (map.tileSize * LIGHT_LENGTH) >= viewport.y;
+      const isInViewPort: boolean =
+        characters[i].container.x - (map.tileSize * LIGHT_LENGTH) <= viewport.x + viewport.w &&
+        characters[i].container.y - (map.tileSize * LIGHT_LENGTH) <= viewport.y + viewport.h &&
+        characters[i].container.x + characterSize + (map.tileSize * LIGHT_LENGTH) >= viewport.x &&
+        characters[i].container.y + characterSize + (map.tileSize * LIGHT_LENGTH) >= viewport.y;
 
 
-        if (isInViewPort) {
-          sprite.tint = 0xFF00FF;
-          const polygon = Lighting.getLightingPolygon({ x: container.x + characterSize / 2, y: container.y + characterSize / 2 }, map, LIGHT_LENGTH);
+      if (isInViewPort) {
+        characters[i].sprite.tint = 0xFF00FF;
 
-          maskGraphic.beginFill();
-          maskGraphic.drawPolygon(polygon as Array<PIXI.Point>);
-          maskGraphic.endFill();
-
-          lightGraphic.x = container.x + characterSize / 2;
-          lightGraphic.y = container.y + characterSize / 2;
-        } else {
-          sprite.tint = 0xFF0000;
+        if (Math.sqrt((characters[i].prevPosition.x - characters[i].container.x) ** 2 + (characters[i].prevPosition.y - characters[i].container.y) ** 2) >= 2) {
+          characters[i].lightPolygon = Lighting.getLightingPolygon({ x: characters[i].container.x + characterSize / 2, y: characters[i].container.y + characterSize / 2 }, map, LIGHT_LENGTH);
+          characters[i].prevPosition.x = characters[i].container.x;
+          characters[i].prevPosition.y = characters[i].container.y;
         }
+
+        maskGraphic.beginFill();
+        maskGraphic.drawPolygon(characters[i].lightPolygon as Array<PIXI.Point>);
+        maskGraphic.endFill();
+
+        characters[i].lightGraphic.x = characters[i].container.x + characterSize / 2;
+        characters[i].lightGraphic.y = characters[i].container.y + characterSize / 2;
+      } else {
+        characters[i].sprite.tint = 0xFF0000;
       }
     }
 
     // Test Viewport Draw
-    if (isLightingFrame) {
-      viewport.x = targetContainer.x - Math.floor(viewport.w / 2);
-      viewport.y = targetContainer.y - Math.floor(viewport.h / 2);
-      lightEnvFrame = 0;
-    }
-    if (isLiquidFrame) {
-      LiquidSimulator.step(map, riquidStepOptions);
-      liquidEnvFrame = 0;
-    }
+    viewport.x = targetContainer.x - Math.floor(viewport.w / 2);
+    viewport.y = targetContainer.y - Math.floor(viewport.h / 2);
+
+    LiquidSimulator.step(map, riquidStepOptions);
+
     tilemap.update();
     stage.x = Math.round(640 - targetContainer.x);
     stage.y = Math.round(360 - targetContainer.y);
