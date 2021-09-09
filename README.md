@@ -7,4 +7,5 @@
 7. Liquid simulation garbage collection optimizing
 8.  Light garbage collection optimizing
 9.  Collision garbage collection optimizing
-10. Lighting masking & layers - `Done`
+10. Tilemap Partitioning & Load
+11. Lighting masking & layers - `Done`

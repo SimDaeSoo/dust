@@ -62,40 +62,40 @@ async function main(): Promise<void> {
 
   const riquidStepOptions: { currentPartition: number, maximum: number, processOrder: number } = { currentPartition: 0, maximum: 40000, processOrder: 0 };
   // Huge World - 8400*2400 - density 0.0005
-  // const map: MapData = Map.generate({
-  //   seed: 'HugeWorld',
-  //   width: 8400,
-  //   height: 2400,
-  //   tileSize: 32,
-  //   step: 3,
-  //   clearTop: 0,
-  //   density: {
-  //     block: 0.3,
-  //     liquid: 0.008
-  //   },
-  //   tileTypes: [4],
-  //   birthLimit: 3,
-  //   deathLimit: 2,
-  //   liquidLimit: 4000000
-  // });
-
-  // Midium World
   const map: MapData = Map.generate({
-    seed: `${Math.random()}`,
-    width: 450,
-    height: 450,
+    seed: 'HugeWorld',
+    width: 8400,
+    height: 2400,
     tileSize: 32,
-    step: 4,
+    step: 3,
     clearTop: 0,
-    tileTypes: [4],
     density: {
       block: 0.3,
-      liquid: 0.3
+      liquid: 0.008
     },
+    tileTypes: [4],
     birthLimit: 3,
     deathLimit: 2,
-    liquidLimit: 2000000
+    liquidLimit: 3000000
   });
+
+  // Midium World
+  // const map: MapData = Map.generate({
+  //   seed: `${Math.random()}`,
+  //   width: 450,
+  //   height: 450,
+  //   tileSize: 32,
+  //   step: 4,
+  //   clearTop: 0,
+  //   tileTypes: [4],
+  //   density: {
+  //     block: 0.3,
+  //     liquid: 0.3
+  //   },
+  //   birthLimit: 3,
+  //   deathLimit: 2,
+  //   liquidLimit: 2000000
+  // });
 
   // Small World
   // const map: MapData = Map.generate({
