@@ -62,43 +62,47 @@ async function main(): Promise<void> {
 
   const riquidStepOptions: { currentPartition: number, maximum: number, processOrder: number } = { currentPartition: 0, maximum: 40000, processOrder: 0 };
   // Huge World - 8400*2400 - density 0.0005
-  const map: MapData = Map.generate({
-    seed: 'HugeWorld',
-    width: 8400,
-    height: 2400,
-    tileSize: 32,
-    step: 3,
-    clearTop: 10,
-    density: {
-      block: 0.3,
-      liquid: 0.008
-    },
-    tileTypes: [4],
-    birthLimit: 3,
-    deathLimit: 2,
-    liquidLimit: 4000000
-  });
-
-  // Midium World
   // const map: MapData = Map.generate({
-  //   seed: `${Math.random()}`,
-  //   width: 450,
-  //   height: 450,
+  //   seed: 'HugeWorld',
+  //   width: 8400,
+  //   height: 2400,
   //   tileSize: 32,
-  //   step: 4,
+  //   step: 3,
   //   clearTop: 0,
-  //   tileTypes: [4],
   //   density: {
   //     block: 0.3,
-  //     liquid: 0.3
+  //     liquid: 0.008
   //   },
+  //   tileTypes: [4],
   //   birthLimit: 3,
   //   deathLimit: 2,
-  //   liquidLimit: 2000000
+  //   liquidLimit: 4000000
   // });
 
+  // Midium World
+  const map: MapData = Map.generate({
+    seed: `${Math.random()}`,
+    width: 450,
+    height: 450,
+    tileSize: 32,
+    step: 4,
+    clearTop: 0,
+    tileTypes: [4],
+    density: {
+      block: 0.3,
+      liquid: 0.3
+    },
+    birthLimit: 3,
+    deathLimit: 2,
+    liquidLimit: 2000000
+  });
+
   // Small World
-  // const map: MapData = Map.generate(80, 45, 32, `${Math.random()}`, {
+  // const map: MapData = Map.generate({
+  //   seed: `${Math.random()}`,
+  //   width: 80,
+  //   height: 45,
+  //   tileSize: 32,
   //   step: 4,
   //   clearTop: 3,
   //   tileTypes: [4],
@@ -123,7 +127,7 @@ async function main(): Promise<void> {
   const lightContainer = new PIXI.Container();
 
   // Lighting
-  const LIGHT_LENGTH = 6;
+  const LIGHT_LENGTH = 8;
   const lightingLayer = new PIXI_LAYERS.Layer();
   const blurFilter = new PIXI.filters.BlurFilter(64, 8, 1, 15);
   blurFilter.autoFit = false;
@@ -150,7 +154,7 @@ async function main(): Promise<void> {
   const characters: Array<{ container: PIXI.Container, vector: Vector, sprite: PIXI.Sprite, lightGraphic: PIXI.Graphics, lightPolygon: Array<Point>, prevPosition: Point }> = [];
   const characterSize = 8;
 
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 1; i++) {
     const container = new PIXI.Container();
     const sprite = new PIXI.Sprite(texture);
     sprite.width = characterSize;
@@ -162,8 +166,8 @@ async function main(): Promise<void> {
     stage.addChild(container);
 
     const lightGraphic = new PIXI.Graphics();
-    lightGraphic.beginFill(0xFFFFFF, 0.3);
-    lightGraphic.drawCircle(0, 0, map.tileSize * 6);
+    lightGraphic.beginFill(0xFFFFFF, 0.5);
+    lightGraphic.drawCircle(0, 0, map.tileSize * LIGHT_LENGTH);
     lightGraphic.endFill();
     lightGraphic.blendMode = PIXI.BLEND_MODES.ADD;
 
@@ -182,8 +186,11 @@ async function main(): Promise<void> {
     }
   }
 
+  let ENV_FRAME = 0;
   let collisionDatas;
+
   const render = () => {
+    ENV_FRAME = (ENV_FRAME + 1) % 2;
     maskGraphic.clear();
 
     for (let i = 0; i < characters.length; i++) {
@@ -229,7 +236,7 @@ async function main(): Promise<void> {
       if (isInViewPort) {
         characters[i].sprite.tint = 0xFF00FF;
 
-        if (Math.sqrt((characters[i].prevPosition.x - characters[i].container.x) ** 2 + (characters[i].prevPosition.y - characters[i].container.y) ** 2) >= 2) {
+        if (ENV_FRAME % 2 === 1 && Math.sqrt((characters[i].prevPosition.x - characters[i].container.x) ** 2 + (characters[i].prevPosition.y - characters[i].container.y) ** 2) >= 1) {
           characters[i].lightPolygon = Lighting.getLightingPolygon({ x: characters[i].container.x + characterSize / 2, y: characters[i].container.y + characterSize / 2 }, map, LIGHT_LENGTH);
           characters[i].prevPosition.x = characters[i].container.x;
           characters[i].prevPosition.y = characters[i].container.y;
@@ -250,13 +257,14 @@ async function main(): Promise<void> {
     viewport.x = targetContainer.x - Math.floor(viewport.w / 2);
     viewport.y = targetContainer.y - Math.floor(viewport.h / 2);
 
-    LiquidSimulator.step(map, riquidStepOptions);
+    if (ENV_FRAME % 2 === 0) LiquidSimulator.step(map, riquidStepOptions);
 
     tilemap.update();
     stage.x = Math.round(640 - targetContainer.x);
     stage.y = Math.round(360 - targetContainer.y);
     app.render();
     stats.update();
+
     window.requestAnimationFrame(render);
   };
 

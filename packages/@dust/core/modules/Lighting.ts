@@ -2,150 +2,142 @@ import { Boundary, Dictionary, Line, MapData, Point } from "../interfaces/index"
 import { lineIntersection } from "./Engine";
 
 // TODO: Garbage Collection 최적화.
-function getLightingPolygon(lightPoint: Point, map: MapData, length: number, options?: { getTiles: boolean }): Array<Point> {
+const EPSILON = 0.000001;
+
+function getLightingPolygon(lightPoint: Point, map: MapData, length: number): Array<Point> {
   const vertices: Array<Point> = [];
   const lines: Array<Line> = [];
   const polygon: Array<Point> = [];
   const checkGrid: Dictionary<boolean> = {};
   const baseDictionary: Dictionary<boolean> = {};
-  const tiles: Array<Point> = [];
-  const baseGridPosition: Point = {
-    x: Math.floor(lightPoint.x / map.tileSize),
-    y: Math.floor(lightPoint.y / map.tileSize)
-  };
-  const positionBoundary: Boundary<Point> = {
-    min: {
-      x: Math.max(0, baseGridPosition.x - length),
-      y: Math.max(0, baseGridPosition.y - length)
-    },
-    max: {
-      x: Math.min(map.width - 1, baseGridPosition.x + length),
-      y: Math.min(map.height - 1, baseGridPosition.y + length)
-    }
-  };
+  const duplicatedPoints: Dictionary<boolean> = {};
   const queue = [];
-  checkGrid[`${baseGridPosition.y},${baseGridPosition.x}`] = true;
+  const baseGridPositionX: number = Math.floor(lightPoint.x / map.tileSize);
+  const baseGridPositionY: number = Math.floor(lightPoint.y / map.tileSize);
+  const positionBoundaryMinX: number = Math.max(0, baseGridPositionX - length);
+  const positionBoundaryMinY: number = Math.max(0, baseGridPositionY - length);
+  const positionBoundaryMaxX: number = Math.min(map.width - 1, baseGridPositionX + length);
+  const positionBoundaryMaxY: number = Math.min(map.height - 1, baseGridPositionY + length);
+  const positions = [
+    { x: baseGridPositionX, y: baseGridPositionY - 1 },
+    { x: baseGridPositionX + 1, y: baseGridPositionY },
+    { x: baseGridPositionX, y: baseGridPositionY + 1 },
+    { x: baseGridPositionX - 1, y: baseGridPositionY }
+  ];
+  let position: Point;
+  let isBlockedTile: boolean;
+  let radian;
 
-  for (const position of [
-    { x: baseGridPosition.x, y: baseGridPosition.y - 1 },
-    { x: baseGridPosition.x + 1, y: baseGridPosition.y },
-    { x: baseGridPosition.x, y: baseGridPosition.y + 1 },
-    { x: baseGridPosition.x - 1, y: baseGridPosition.y }
-  ]) {
-    const vaildTile: boolean =
-      position.x >= positionBoundary.min.x &&
-      position.x <= positionBoundary.max.x &&
-      position.y >= positionBoundary.min.y &&
-      position.y <= positionBoundary.max.y;
+  checkGrid[`${baseGridPositionY},${baseGridPositionX}`] = true;
 
-    if (vaildTile) {
+  for (const position of positions) {
+    if (
+      position.x >= positionBoundaryMinX &&
+      position.x <= positionBoundaryMaxX &&
+      position.y >= positionBoundaryMinY &&
+      position.y <= positionBoundaryMaxY
+    ) {
       checkGrid[`${position.y},${position.x}`] = true;
       queue.push(position);
     }
   }
 
   while (queue.length) {
-    const position: Point = queue.splice(0, 1)[0];
-    const isBlockedTile: boolean = map.grid[position.y][position.x] && !map.grid[position.y][position.x].movable;
+    position = queue.splice(0, 1)[0];
+    isBlockedTile = map.grid[position.y][position.x] && !map.grid[position.y][position.x].movable;
 
     if (isBlockedTile) {
-      const tilePositions: Array<Point> = [
-        { x: position.x * map.tileSize, y: position.y * map.tileSize },
-        { x: (position.x + 1) * map.tileSize, y: (position.y + 1) * map.tileSize }
-      ];
-      if (position.x > baseGridPosition.x) {
-        if (position.y > baseGridPosition.y) { // RD
+      if (position.x > baseGridPositionX) {
+        if (position.y > baseGridPositionY) { // RD
           if (!map.grid[position.y - 1][position.x - 1] || map.grid[position.y - 1][position.x - 1].movable) {
-            vertices.push({ x: tilePositions[0].x, y: tilePositions[0].y });
+            vertices.push({ x: (position.x * map.tileSize), y: (position.y * map.tileSize) });
           }
           if (!map.grid[position.y][position.x - 1] || map.grid[position.y][position.x - 1].movable) {
-            vertices.push({ x: tilePositions[0].x, y: tilePositions[1].y });
-            lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[0].x, y: tilePositions[1].y }]);
+            vertices.push({ x: (position.x * map.tileSize), y: (position.y + 1) * map.tileSize });
+            lines.push([{ x: (position.x * map.tileSize), y: (position.y * map.tileSize) }, { x: (position.x * map.tileSize), y: (position.y + 1) * map.tileSize }]);
           }
           if (!map.grid[position.y - 1][position.x] || map.grid[position.y - 1][position.x].movable) {
-            vertices.push({ x: tilePositions[1].x, y: tilePositions[0].y });
-            lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[0].y }]);
+            vertices.push({ x: ((position.x + 1) * map.tileSize), y: (position.y * map.tileSize) });
+            lines.push([{ x: (position.x * map.tileSize), y: (position.y * map.tileSize) }, { x: ((position.x + 1) * map.tileSize), y: (position.y * map.tileSize) }]);
           }
-        } else if (position.y < baseGridPosition.y) { // RU
+        } else if (position.y < baseGridPositionY) { // RU
           if (!map.grid[position.y + 1][position.x - 1] || map.grid[position.y + 1][position.x - 1].movable) {
-            vertices.push({ x: tilePositions[0].x, y: tilePositions[1].y });
+            vertices.push({ x: (position.x * map.tileSize), y: (position.y + 1) * map.tileSize });
           }
           if (!map.grid[position.y][position.x - 1] || map.grid[position.y][position.x - 1].movable) {
-            vertices.push({ x: tilePositions[0].x, y: tilePositions[0].y });
-            lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[0].x, y: tilePositions[1].y }]);
+            vertices.push({ x: (position.x * map.tileSize), y: (position.y * map.tileSize) });
+            lines.push([{ x: (position.x * map.tileSize), y: (position.y * map.tileSize) }, { x: (position.x * map.tileSize), y: (position.y + 1) * map.tileSize }]);
           }
           if (!map.grid[position.y + 1][position.x] || map.grid[position.y + 1][position.x].movable) {
-            vertices.push({ x: tilePositions[1].x, y: tilePositions[1].y });
-            lines.push([{ x: tilePositions[0].x, y: tilePositions[1].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
+            vertices.push({ x: ((position.x + 1) * map.tileSize), y: (position.y + 1) * map.tileSize });
+            lines.push([{ x: (position.x * map.tileSize), y: (position.y + 1) * map.tileSize }, { x: ((position.x + 1) * map.tileSize), y: (position.y + 1) * map.tileSize }]);
           }
         } else if (!baseDictionary['R']) { // R
-          vertices.push({ x: tilePositions[0].x, y: tilePositions[0].y });
-          vertices.push({ x: tilePositions[0].x, y: tilePositions[1].y });
-          lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[0].x, y: tilePositions[1].y }]);
+          vertices.push({ x: (position.x * map.tileSize), y: (position.y * map.tileSize) });
+          vertices.push({ x: (position.x * map.tileSize), y: (position.y + 1) * map.tileSize });
+          lines.push([{ x: (position.x * map.tileSize), y: (position.y * map.tileSize) }, { x: (position.x * map.tileSize), y: (position.y + 1) * map.tileSize }]);
           baseDictionary['R'] = true;
         }
-      } else if (position.x < baseGridPosition.x) {
-        if (position.y > baseGridPosition.y) { // LD
+      } else if (position.x < baseGridPositionX) {
+        if (position.y > baseGridPositionY) { // LD
 
           if (!map.grid[position.y - 1][position.x + 1] || map.grid[position.y - 1][position.x + 1].movable) {
-            vertices.push({ x: tilePositions[1].x, y: tilePositions[0].y });
+            vertices.push({ x: ((position.x + 1) * map.tileSize), y: (position.y * map.tileSize) });
           }
           if (!map.grid[position.y][position.x + 1] || map.grid[position.y][position.x + 1].movable) {
-            vertices.push({ x: tilePositions[1].x, y: tilePositions[1].y });
-            lines.push([{ x: tilePositions[1].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
+            vertices.push({ x: ((position.x + 1) * map.tileSize), y: (position.y + 1) * map.tileSize });
+            lines.push([{ x: ((position.x + 1) * map.tileSize), y: (position.y * map.tileSize) }, { x: ((position.x + 1) * map.tileSize), y: (position.y + 1) * map.tileSize }]);
           }
           if (!map.grid[position.y - 1][position.x] || map.grid[position.y - 1][position.x].movable) {
-            vertices.push({ x: tilePositions[0].x, y: tilePositions[0].y });
-            lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[0].y }]);
+            vertices.push({ x: (position.x * map.tileSize), y: (position.y * map.tileSize) });
+            lines.push([{ x: (position.x * map.tileSize), y: (position.y * map.tileSize) }, { x: ((position.x + 1) * map.tileSize), y: (position.y * map.tileSize) }]);
           }
-        } else if (position.y < baseGridPosition.y) { // LU
+        } else if (position.y < baseGridPositionY) { // LU
           if (!map.grid[position.y + 1][position.x + 1] || map.grid[position.y + 1][position.x + 1].movable) {
-            vertices.push({ x: tilePositions[1].x, y: tilePositions[1].y });
+            vertices.push({ x: ((position.x + 1) * map.tileSize), y: (position.y + 1) * map.tileSize });
           }
           if (!map.grid[position.y][position.x + 1] || map.grid[position.y][position.x + 1].movable) {
-            vertices.push({ x: tilePositions[1].x, y: tilePositions[0].y });
-            lines.push([{ x: tilePositions[1].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
+            vertices.push({ x: ((position.x + 1) * map.tileSize), y: (position.y * map.tileSize) });
+            lines.push([{ x: ((position.x + 1) * map.tileSize), y: (position.y * map.tileSize) }, { x: ((position.x + 1) * map.tileSize), y: (position.y + 1) * map.tileSize }]);
           }
           if (!map.grid[position.y + 1][position.x] || map.grid[position.y + 1][position.x].movable) {
-            vertices.push({ x: tilePositions[0].x, y: tilePositions[1].y });
-            lines.push([{ x: tilePositions[0].x, y: tilePositions[1].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
+            vertices.push({ x: (position.x * map.tileSize), y: (position.y + 1) * map.tileSize });
+            lines.push([{ x: (position.x * map.tileSize), y: (position.y + 1) * map.tileSize }, { x: ((position.x + 1) * map.tileSize), y: (position.y + 1) * map.tileSize }]);
           }
         } else if (!baseDictionary['L']) { // L
-          vertices.push({ x: tilePositions[1].x, y: tilePositions[0].y });
-          vertices.push({ x: tilePositions[1].x, y: tilePositions[1].y });
-          lines.push([{ x: tilePositions[1].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
+          vertices.push({ x: ((position.x + 1) * map.tileSize), y: (position.y * map.tileSize) });
+          vertices.push({ x: ((position.x + 1) * map.tileSize), y: (position.y + 1) * map.tileSize });
+          lines.push([{ x: ((position.x + 1) * map.tileSize), y: (position.y * map.tileSize) }, { x: ((position.x + 1) * map.tileSize), y: (position.y + 1) * map.tileSize }]);
           baseDictionary['L'] = true;
         }
       } else {
-        if (position.y > baseGridPosition.y && !baseDictionary['D']) { // D
-          vertices.push({ x: tilePositions[0].x, y: tilePositions[0].y });
-          vertices.push({ x: tilePositions[1].x, y: tilePositions[0].y });
-          lines.push([{ x: tilePositions[0].x, y: tilePositions[0].y }, { x: tilePositions[1].x, y: tilePositions[0].y }]);
+        if (position.y > baseGridPositionY && !baseDictionary['D']) { // D
+          vertices.push({ x: (position.x * map.tileSize), y: (position.y * map.tileSize) });
+          vertices.push({ x: ((position.x + 1) * map.tileSize), y: (position.y * map.tileSize) });
+          lines.push([{ x: (position.x * map.tileSize), y: (position.y * map.tileSize) }, { x: ((position.x + 1) * map.tileSize), y: (position.y * map.tileSize) }]);
           baseDictionary['D'] = true;
-        } else if (position.y < baseGridPosition.y && !baseDictionary['U']) { // U
-          vertices.push({ x: tilePositions[0].x, y: tilePositions[1].y });
-          vertices.push({ x: tilePositions[1].x, y: tilePositions[1].y });
-          lines.push([{ x: tilePositions[0].x, y: tilePositions[1].y }, { x: tilePositions[1].x, y: tilePositions[1].y }]);
+        } else if (position.y < baseGridPositionY && !baseDictionary['U']) { // U
+          vertices.push({ x: (position.x * map.tileSize), y: (position.y + 1) * map.tileSize });
+          vertices.push({ x: ((position.x + 1) * map.tileSize), y: (position.y + 1) * map.tileSize });
+          lines.push([{ x: (position.x * map.tileSize), y: (position.y + 1) * map.tileSize }, { x: ((position.x + 1) * map.tileSize), y: (position.y + 1) * map.tileSize }]);
           baseDictionary['U'] = true;
         }
       }
     } else {
       const childPositions: Array<any> = [];
 
-      if (position.x <= baseGridPosition.x && !checkGrid[`${position.y},${position.x - 1}`]) childPositions.push({ x: position.x - 1, y: position.y });
-      if (position.x >= baseGridPosition.x && !checkGrid[`${position.y},${position.x + 1}`]) childPositions.push({ x: position.x + 1, y: position.y });
-      if (position.y <= baseGridPosition.y && !checkGrid[`${position.y - 1},${position.x}`]) childPositions.push({ x: position.x, y: position.y - 1 });
-      if (position.y >= baseGridPosition.y && !checkGrid[`${position.y + 1},${position.x}`]) childPositions.push({ x: position.x, y: position.y + 1 });
+      if (position.x <= baseGridPositionX && !checkGrid[`${position.y},${position.x - 1}`]) childPositions.push({ x: position.x - 1, y: position.y });
+      if (position.x >= baseGridPositionX && !checkGrid[`${position.y},${position.x + 1}`]) childPositions.push({ x: position.x + 1, y: position.y });
+      if (position.y <= baseGridPositionY && !checkGrid[`${position.y - 1},${position.x}`]) childPositions.push({ x: position.x, y: position.y - 1 });
+      if (position.y >= baseGridPositionY && !checkGrid[`${position.y + 1},${position.x}`]) childPositions.push({ x: position.x, y: position.y + 1 });
 
       for (const childPosition of childPositions) {
-        const vaildTile: boolean =
-          childPosition.x >= positionBoundary.min.x &&
-          childPosition.x <= positionBoundary.max.x &&
-          childPosition.y >= positionBoundary.min.y &&
-          childPosition.y <= positionBoundary.max.y;
-
-        if (vaildTile) {
-          tiles.push({ x: childPosition.x, y: childPosition.y });
+        if (
+          childPosition.x >= positionBoundaryMinX &&
+          childPosition.x <= positionBoundaryMaxX &&
+          childPosition.y >= positionBoundaryMinY &&
+          childPosition.y <= positionBoundaryMaxY
+        ) {
           checkGrid[`${childPosition.y},${childPosition.x}`] = true;
           queue.push(childPosition);
         }
@@ -154,25 +146,22 @@ function getLightingPolygon(lightPoint: Point, map: MapData, length: number, opt
   }
 
   lines.push(
-    [{ x: positionBoundary.min.x * map.tileSize, y: positionBoundary.min.y * map.tileSize }, { x: (positionBoundary.max.x + 1) * map.tileSize, y: positionBoundary.min.y * map.tileSize }],
-    [{ x: positionBoundary.min.x * map.tileSize, y: (positionBoundary.max.y + 1) * map.tileSize }, { x: (positionBoundary.max.x + 1) * map.tileSize, y: (positionBoundary.max.y + 1) * map.tileSize }],
-    [{ x: positionBoundary.min.x * map.tileSize, y: positionBoundary.min.y * map.tileSize }, { x: positionBoundary.min.x * map.tileSize, y: (positionBoundary.max.y + 1) * map.tileSize }],
-    [{ x: (positionBoundary.max.x + 1) * map.tileSize, y: positionBoundary.min.y * map.tileSize }, { x: (positionBoundary.max.x + 1) * map.tileSize, y: (positionBoundary.max.y + 1) * map.tileSize }],
+    [{ x: positionBoundaryMinX * map.tileSize, y: positionBoundaryMinY * map.tileSize }, { x: (positionBoundaryMaxX + 1) * map.tileSize, y: positionBoundaryMinY * map.tileSize }],
+    [{ x: positionBoundaryMinX * map.tileSize, y: (positionBoundaryMaxY + 1) * map.tileSize }, { x: (positionBoundaryMaxX + 1) * map.tileSize, y: (positionBoundaryMaxY + 1) * map.tileSize }],
+    [{ x: positionBoundaryMinX * map.tileSize, y: positionBoundaryMinY * map.tileSize }, { x: positionBoundaryMinX * map.tileSize, y: (positionBoundaryMaxY + 1) * map.tileSize }],
+    [{ x: (positionBoundaryMaxX + 1) * map.tileSize, y: positionBoundaryMinY * map.tileSize }, { x: (positionBoundaryMaxX + 1) * map.tileSize, y: (positionBoundaryMaxY + 1) * map.tileSize }],
   );
   vertices.push(
-    { x: positionBoundary.min.x * map.tileSize, y: positionBoundary.min.y * map.tileSize },
-    { x: (positionBoundary.max.x + 1) * map.tileSize, y: positionBoundary.min.y * map.tileSize },
-    { x: positionBoundary.min.x * map.tileSize, y: (positionBoundary.max.y + 1) * map.tileSize },
-    { x: (positionBoundary.max.x + 1) * map.tileSize, y: (positionBoundary.max.y + 1) * map.tileSize }
+    { x: positionBoundaryMinX * map.tileSize, y: positionBoundaryMinY * map.tileSize },
+    { x: (positionBoundaryMaxX + 1) * map.tileSize, y: positionBoundaryMinY * map.tileSize },
+    { x: positionBoundaryMinX * map.tileSize, y: (positionBoundaryMaxY + 1) * map.tileSize },
+    { x: (positionBoundaryMaxX + 1) * map.tileSize, y: (positionBoundaryMaxY + 1) * map.tileSize }
   );
-  const RAY_LENGTH = 2 * length * map.tileSize;
-  const EPSILON = 0.000001;
-  let radian;
   for (const vertex of vertices) {
     radian = Math.atan2(vertex.y - lightPoint.y, vertex.x - lightPoint.x);
     const rays: Array<Line> = [
-      [{ x: lightPoint.x, y: lightPoint.y }, { x: lightPoint.x + Math.cos(radian + EPSILON) * RAY_LENGTH, y: lightPoint.y + Math.sin(radian + EPSILON) * RAY_LENGTH }],
-      [{ x: lightPoint.x, y: lightPoint.y }, { x: lightPoint.x + Math.cos(radian - EPSILON) * RAY_LENGTH, y: lightPoint.y + Math.sin(radian - EPSILON) * RAY_LENGTH }],
+      [{ x: lightPoint.x, y: lightPoint.y }, { x: lightPoint.x + Math.cos(radian + EPSILON) * (2 * length * map.tileSize), y: lightPoint.y + Math.sin(radian + EPSILON) * (2 * length * map.tileSize) }],
+      [{ x: lightPoint.x, y: lightPoint.y }, { x: lightPoint.x + Math.cos(radian - EPSILON) * (2 * length * map.tileSize), y: lightPoint.y + Math.sin(radian - EPSILON) * (2 * length * map.tileSize) }],
     ];
 
     for (const ray of rays) {
@@ -188,8 +177,6 @@ function getLightingPolygon(lightPoint: Point, map: MapData, length: number, opt
 
   polygon.sort((pointA, pointB) => Math.atan2(pointA.y - lightPoint.y, pointA.x - lightPoint.x) > Math.atan2(pointB.y - lightPoint.y, pointB.x - lightPoint.x) ? 1 : -1);
 
-  const duplicatedPoints: Dictionary<boolean> = {};
-  if (options && options.getTiles) return tiles;
   return polygon.reduce((vertices: Array<Point>, point, index) => {
     const prevPoint = index === 0 ? polygon[polygon.length - 1] : polygon[index - 1];
     const nextPoint = index === polygon.length - 1 ? polygon[0] : polygon[index + 1];
